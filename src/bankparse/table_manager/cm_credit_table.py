@@ -34,5 +34,8 @@ class CMCreditStatementTable(CreditStatementTable):
             return self.content
         self.content = output
 
-    def convertContentToDict(self):
+    def get_dict(self):
         return super().convertContentToDict()
+
+    def get_dataframe(self):
+        return super().get_dataframe()

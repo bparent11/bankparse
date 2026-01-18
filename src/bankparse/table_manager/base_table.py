@@ -20,13 +20,13 @@ class Table(ABC):
         pass
 
 class BankTransactionTable(Table):
-    def __init__():
-        pass
+    def __init__(self):
+        super().__init__()
 
 class BalanceStatementTable(Table):
-    def __init__():
-        pass
+    def __init__(self):
+        super().__init__()
 
 class CreditStatementTable(Table):
-    def __init__():
-        pass
+    def __init__(self):
+        super().__init__()
