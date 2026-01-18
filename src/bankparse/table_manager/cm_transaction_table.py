@@ -55,7 +55,7 @@ class CMBankTransactionTable(BankTransactionTable):
         
         stage_output = []
         for i, line in enumerate(self.content):
-            if matches(r"\b\d{2}/\d{2}/\d{4}\b", line[0]) and 'SOLDE' in line[0]:
+            if matches(r"\b\d{2}/\d{2}/\d{4}\b", line[0]) and 'solde' in line[0].lower():
                 stage_output.insert(-1, line)
                 self._statement_lines_indexes.append(i)
             else:
@@ -88,7 +88,7 @@ class CMBankTransactionTable(BankTransactionTable):
 
         if self._statement_lines_indexes == []:
             for i, line in enumerate(self.content):
-                if matches(r"\b\d{2}/\d{2}/\d{4}\b", line[0]) and 'SOLDE' in line[0]:
+                if matches(r"\b\d{2}/\d{2}/\d{4}\b", line[0]) and 'solde' in line[0].lower():
                     self._statement_lines_indexes.append(i)
 
         temp_table = self.content.copy()
