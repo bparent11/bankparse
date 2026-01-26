@@ -2,3 +2,6 @@ from bankparse.table_manager.base_table import BankTransactionTable, BalanceStat
 from bankparse.table_manager.cm_transaction_table import CMBankTransactionTable
 from bankparse.table_manager.cm_balance_statement_table import CMBankStatementTable
 from bankparse.table_manager.cm_credit_table import CMCreditStatementTable
+
+from bankparse.table_manager.ca_transaction_table import CABankTransactionTable
+# from bankparse.table_manager.cm_credit_table import CMCreditStatementTable
