@@ -69,7 +69,6 @@ class CAAccountExtractionFile(AccountExtractionFile):
                         seen.add(str(line))
                         output.append(line[:-1])
 
-            print(output)
         return output
 
     def get_statement_tables(self) -> None:
