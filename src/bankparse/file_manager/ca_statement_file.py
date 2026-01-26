@@ -42,11 +42,12 @@ class CAAccountExtractionFile(AccountExtractionFile):
 
     def get_transaction_tables(self, file_path:str) -> List[List[str]] | None:
         """
-        Instance method to retrieve transaction tables within the file.
+        Instance method to retrieve transaction table within the file.
         Particularly used when the class is instancied.
+        We consider here that there will be a unique transaction table in each statement file for CA.
         
         Args:
-            - file_path (str) : path of the file containing the transaction tables.
+            - file_path (str) : path of the file containing the transaction table.
 
         Returns:
             A list containing all of the rows. We assumed that each extraction file contains a unique table.
