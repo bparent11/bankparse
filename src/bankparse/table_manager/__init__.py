@@ -5,3 +5,5 @@ from bankparse.table_manager.cm_credit_table import CMCreditStatementTable
 
 from bankparse.table_manager.ca_transaction_table import CABankTransactionTable
 # from bankparse.table_manager.cm_credit_table import CMCreditStatementTable
+
+from bankparse.table_manager.bourso_transaction_table import BoursoBankTransactionTable
