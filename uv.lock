@@ -8,8 +8,8 @@ resolution-markers = [
 
 [[package]]
 name = "bankparse"
-version = "0.1.0"
-source = { virtual = "." }
+version = "0.0.3"
+source = { editable = "." }
 dependencies = [
     { name = "pandas" },
     { name = "pdfplumber" },

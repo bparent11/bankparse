@@ -29,7 +29,8 @@ class BoursoAccountExtractionFile(AccountExtractionFile):
                     content = self.get_transaction_tables(file_path=file_path),
                     owner = self.owner,
                     accountId = accountIds_NamesMatching_results[0]['accountId'],
-                    extraction_date = self.extraction_date
+                    extraction_date = self.extraction_date,
+                    file_path=file_path
                 )
             ]
 
@@ -50,71 +51,87 @@ class BoursoAccountExtractionFile(AccountExtractionFile):
             A row if represented by a list of strings.
             The first row of a table represents the headers.
         """
-        operations = []
-        operation = []
-        extract_date_pattern = re.compile(
-            r"^(\d{2}/\d{2}/\d{4}).*(\d{2}/\d{2}/\d{4})\s+\d+,\d{2}$"
-        )
+        with pdfplumber.open(file_path) as pdf:
+            words = {}
+            for i, page in enumerate(pdf.pages):
+                words_in_page = page.extract_words(
+                    use_text_flow=False,
+                    keep_blank_chars=True,
+                    x_tolerance=1
+                )
 
-        # Column-based storage like
-        with pdfplumber.open(file_path) as pdf: # je peux aussi récupérer les x y de chaque object, donc si je trouve les x y de chaque débit, crédit, je pourrais récup ça et l'utiliser
-            transaction_tables = []
-            for page in pdf.pages:
-                transaction_tables += page.extract_tables()
+                words[f"page_{i+1}"] = words_in_page
 
-            transaction_tables = [table for table in transaction_tables if table[0][0].startswith('Date')]
+        mouvements_en_eur_found = False
+        date_ope_found = False
+        first_date_valeur_found = False
+        ref_found = False
 
-            output = []
-            seen = set()
-            for table in transaction_tables:
-                for line in table:
-                    if (str(line) in seen):
-                        pass
-                    else:
-                        seen.add(str(line))
-                        output.append(line)
+        output = {
+            "Date opération":[],
+            "Libellé":[],
+            "Valeur":[],
+            "Débit":[],
+            "Crédit":[]
+        }
 
-        # print(f"Transaction tables for .extract_tables()")
-        # print(output)
-        final_statement_line = output.pop()
+        for page, words_list in words.items():
+            mouvements_en_eur_found = False
+            for i, word in enumerate(words_list):
+                # Find "MOUVEMENTS EN EUR" to know that we can check for transactions.
+                if all((word['text'] == 'MOUVEMENTS', word['x0'] > 360)):
+                    mouvements_en_eur_found = True
+                    continue
 
-        debits = ""
-        credits = ""
-        for table_content in output[1:]:
-            debits += table_content[-2] + '\n'
-            credits += table_content[-1] + '\n'
-        
-        debits = debits.strip('\n').split('\n')
-        credits = credits.strip('\n').split('\n')
+                # Check if we found a date (after MOUVEMENTS, and in Date opération or Date valeur)
+                is_date = re.match(r'(\d{2}+/\d{2}+/\d{4}+)', word['text'])
+                if all((mouvements_en_eur_found, is_date, any((word['x0'] < 90, word['x0'] > 370)))): # to avoid retrieving date within Libellé
+                    # Check if we have a "Date opération"
+                    if (word['x0'] < 90):
+                        output['Date opération'].append(is_date.group())
+                        output['Libellé'].append('')
+                        date_ope_found = True
+                        date_ope_index = i
 
-        first_statement_line = credits[0]
-        del credits[0]
+                        if first_date_valeur_found and not ref_found:
+                            output['Libellé'][-2] += ' '.join([''] + [word['text'] for word in words_list[transaction_amount_index+1:i]])
+                        
+                        ref_found = False
 
-        print("Debits and Credits")
-        print(debits)
-        print(credits)
+                    # Check if we have a "Date valeur"
+                    elif all((word['x0'] > 370, date_ope_found)):
+                        output['Libellé'][-1] += ' '.join([''] + [word['text'] for word in words_list[date_ope_index+1:i]]).strip()
+                        output['Valeur'].append(word['text'])
 
-        # Row-based storage like
-        for line in self.content:
-            date_regex = re.match(extract_date_pattern, line)
+                        transaction_amount = words_list[i+1]
+                        transaction_amount_index = i+1
 
-            if (date_regex): # tellement complexe, on peut pas non plus savoir si c'est un débit ou un crédit, je pense qu'on peut croiser les infos avec le .extract_table, sinon faut voir.
-                # print('REGEXED')
-                # print(line)
-                operation = line.split(' ')
-                date_regex = None
-                continue
-                
-            if operation != []:
-                operation[1] += ' ' + line
+                        if transaction_amount['x0'] < 500:
+                            output['Débit'].append(transaction_amount['text'])
+                            output['Crédit'].append('')
+                        else:
+                            output['Débit'].append('')
+                            output['Crédit'].append(transaction_amount['text'])
 
-                if 'RŁf' in line:
-                    operations.append(operation)
-                    operation = []
+                        date_ope_found = False
+                        first_date_valeur_found = True
+                    
+                    continue
 
-        print("Opérations")
-        print(operations)
-        return operations # avec la méthode précédente, impossible de différence les débit des crédits.
+                elif any(('RŁf' == word['text'], ('Nouveau' == word['text'] and word['x0'] > 683.0), ('A' == word['text'] and word['x0'] > 739.0))):
+                    window_size = 2 if words_list[i+1]['text'] != ':' else 3
+                    output['Libellé'][-1] += ' '.join([''] + [word['text'] for word in words_list[transaction_amount_index+1:i+window_size]])
+                    ref_found = True
+
+        headers = list(output.keys())
+        values = list(output.values())
+        output = []
+
+        for i in range(len(values[0])):
+            output.append([val[i] for val in values])
+
+        output.insert(0, headers)
+        return output
 
     def get_statement_tables(self) -> None:
         """
@@ -137,12 +154,7 @@ class BoursoAccountExtractionFile(AccountExtractionFile):
             A row if represented by a list of strings.
             The first row of a table represents the headers.
         """
-        with pdfplumber.open(path) as pdf:
-            statement_tables = []
-            for page in pdf.pages:
-                statement_tables += page.extract_tables()
-        
-        return [table for table in statement_tables if (table[0][0] != 'Date') and (len(table[0]) == 4)]
+        pass
 
     def get_owner_and_extract_date(self, pdf_lines:List[str]) -> Tuple[str, str]:
         """
