@@ -6,11 +6,18 @@ from typing import Tuple, List, Dict
 
 class CMAccountExtractionFile(AccountExtractionFile):
     """
-    Class for extraction file from Crédit Mutuel.
+    Class for extraction file from Bourso Bank.
     Inherits from abstract base class AccountExtractionFile.
 
-    Attributes :
-    - file_path (str): path of the pdf file.
+    Attributes:
+    - all the attributes from the base class.
+
+    Methods :
+    - get_owner_and_extract_date
+    - get_transaction_tables
+    - get_statement_tables
+    - get_credit_tables
+    - accountIds_NamesMatching
     """
     def __init__(self, file_path:str):
         super().__init__(file_path=file_path)
@@ -30,7 +37,7 @@ class CMAccountExtractionFile(AccountExtractionFile):
                     owner = self.owner,
                     accountId = table[1][0],
                     extraction_date = self.extraction_date
-                ) for i, table in enumerate(self.get_statement_tables(self.file_path))
+                ) for table in self.get_statement_tables(self.file_path)
             ]
         self.credit_tables = [
                 CMCreditStatementTable(
@@ -38,7 +45,7 @@ class CMAccountExtractionFile(AccountExtractionFile):
                     owner = self.owner,
                     accountId = table[1][0],
                     extraction_date = self.extraction_date
-                ) for i, table in enumerate(self.get_credit_tables(self.file_path))
+                ) for table in self.get_credit_tables(self.file_path)
             ]
 
     def get_transaction_tables(self, file_path:str) -> List[List[List[str]]] | None:
@@ -89,7 +96,7 @@ class CMAccountExtractionFile(AccountExtractionFile):
         Particularly used when the class is instancied.
         
         Args:
-            - file_path (str) : path of the file containing the transaction tables.
+            - file_path (str) : path of the file containing the credit tables.
 
         Returns:
             A list containing all of the tables.
@@ -110,7 +117,7 @@ class CMAccountExtractionFile(AccountExtractionFile):
         Particularly used when the class is instancied.
         
         Args:
-            - file_path (str) : path of the file containing the transaction tables.
+            - pdf_lines (List[str]) : File's lines.
 
         Returns:
             - Tuple[owner (str), extract_date (str)] : the owner and the extract date.
@@ -152,7 +159,7 @@ class CMAccountExtractionFile(AccountExtractionFile):
         Particularly used when the class is instancied.
         
         Args:
-            - file_path (str) : path of the file containing the transaction tables.
+            - pdf_lines (List[str]) : File's lines.
 
         Returns:
             - List[Dict[str, str]] containing, for each match found, the accountId, the accountLabel and the owner.            

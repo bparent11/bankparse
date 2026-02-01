@@ -9,15 +9,13 @@ class CAAccountExtractionFile(AccountExtractionFile):
     Class for extraction file from Crédit Agricole.
     Inherits from abstract base class AccountExtractionFile.
 
-    Attributes :
-    - file_path (str): path of the pdf file.
+    Attributes:
+    - all the attributes from the base class.
 
-    Comments :
-    - Devs don't have access to a Crédit Agricole's statement 
-    file for a credit, therefore it's not implemented.
-    - Crédit Agricole doesn't provide extract files if there 
-    hasn't been any transactions during the month.
-    Then BankStatement table isn't available.
+    Methods:
+    - get_owner_and_extract_date
+    - get_transaction_tables
+    - accountIds_NamesMatching
     """
     def __init__(self, file_path:str):
         super().__init__(file_path=file_path)
@@ -30,15 +28,7 @@ class CAAccountExtractionFile(AccountExtractionFile):
                     accountId = accountIds_NamesMatching_results[0]['accountId'],
                     extraction_date = self.extraction_date
                 )
-            ] 
-        # self.credit_tables = [
-        #         CACreditStatementTable(
-        #             content = table,
-        #             owner = self.owner,
-        #             accountId = table[1][0],
-        #             extraction_date = self.extraction_date
-        #         ) for i, table in enumerate(self.get_credit_tables(self.file_path))
-        #     ]
+            ]
 
     def get_transaction_tables(self, file_path:str) -> List[List[str]] | None:
         """
@@ -71,34 +61,6 @@ class CAAccountExtractionFile(AccountExtractionFile):
                         output.append(line[:-1])
 
         return output
-
-    def get_statement_tables(self) -> None:
-        """
-        This method isn't used for CA statement files since this kind of table doesn't
-        exist within the CA's documents.
-        """
-        pass
-    
-    def get_credit_tables(self, path:str) -> List[List[List[str]]] | None:
-        """
-        Instance method to retrieve credit tables within the file.
-        Particularly used when the class is instancied.
-        
-        Args:
-            - file_path (str) : path of the file containing the transaction tables.
-
-        Returns:
-            A list containing all of the tables.
-            A table contains rows. A table is represented by a list of lists containing strings.
-            A row if represented by a list of strings.
-            The first row of a table represents the headers.
-        """
-        with pdfplumber.open(path) as pdf:
-            statement_tables = []
-            for page in pdf.pages:
-                statement_tables += page.extract_tables()
-        
-        return [table for table in statement_tables if (table[0][0] != 'Date') and (len(table[0]) == 4)]
 
     def get_owner_and_extract_date(self, pdf_lines:List[str]) -> Tuple[str, str]:
         """
@@ -179,5 +141,4 @@ class CAAccountExtractionFile(AccountExtractionFile):
                     'owner' : self.owner
                 }
             )
-            # for line_text in account_id_line
         ]

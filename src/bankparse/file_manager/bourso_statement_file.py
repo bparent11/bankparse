@@ -1,23 +1,20 @@
 from bankparse.file_manager.base_statement_file import AccountExtractionFile
 from bankparse.table_manager import BoursoBankTransactionTable
-from bankparse.utils import matches
 import re, pdfplumber
 from typing import Tuple, List, Dict
 
 class BoursoAccountExtractionFile(AccountExtractionFile):
     """
-    Class for extraction file from Crédit Agricole.
+    Class for extraction file from Bourso Bank.
     Inherits from abstract base class AccountExtractionFile.
 
-    Attributes :
-    - file_path (str): path of the pdf file.
+    Attributes:
+    - all the attributes from the base class.
 
-    Comments :
-    - Devs don't have access to a Crédit Agricole's statement 
-    file for a credit, therefore it's not implemented.
-    - Crédit Agricole doesn't provide extract files if there 
-    hasn't been any transactions during the month.
-    Then BankStatement table isn't available.
+    Methods :
+    - get_owner_and_extract_date
+    - get_transaction_tables
+    - accountIds_NamesMatching
     """
     def __init__(self, file_path:str):
         super().__init__(file_path=file_path)
@@ -36,11 +33,11 @@ class BoursoAccountExtractionFile(AccountExtractionFile):
 
     def get_transaction_tables(self, file_path:str) -> List[List[str]] | None:
         """
-        Instance method to retrieve transaction table within the file.
+        Instance method to retrieve transaction tables within the file.
         Particularly used when the class is instancied.
         We consider here that there will be a unique transaction table in each statement file for Bourso.
         
-        With the pdf.pages.extract_tables() method, it was impossible to differentiate credits and debits.
+        With the pdf.pages.extract_tables() method, it is impossible to differentiate credits and debits.
 
         Args:
             - file_path (str) : path of the file containing the transaction table.
@@ -132,29 +129,6 @@ class BoursoAccountExtractionFile(AccountExtractionFile):
 
         output.insert(0, headers)
         return output
-
-    def get_statement_tables(self) -> None:
-        """
-        This method isn't used for Bourso statement files since this kind of table doesn't
-        exist within the Bourso's documents.
-        """
-        pass
-    
-    def get_credit_tables(self, path:str) -> List[List[List[str]]] | None:
-        """
-        Instance method to retrieve credit tables within the file.
-        Particularly used when the class is instancied.
-        
-        Args:
-            - file_path (str) : path of the file containing the transaction tables.
-
-        Returns:
-            A list containing all of the tables.
-            A table contains rows. A table is represented by a list of lists containing strings.
-            A row if represented by a list of strings.
-            The first row of a table represents the headers.
-        """
-        pass
 
     def get_owner_and_extract_date(self, pdf_lines:List[str]) -> Tuple[str, str]:
         """

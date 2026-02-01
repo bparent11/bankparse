@@ -9,14 +9,13 @@ def get_text_lines_from_pdf_file(path: str) -> List[str]:
         - path: path of the pdf file.
 
     Returns:
-        - List containing the lines, None if there isn't any
+        List containing the lines, None if there isn't any
     """
 
     with pdfplumber.open(path) as pdf:
         text = ""
         for page in pdf.pages:
-            # tables_content = pdf.pages[0].extract_tables() # We can't retrieve the account number with this method
-            text += page.extract_text() # it's harder, but we have both tables and accounts data.
+            text += page.extract_text()
 
     if text=="":
         return None
