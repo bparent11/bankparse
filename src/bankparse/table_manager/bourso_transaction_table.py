@@ -1,5 +1,4 @@
 from bankparse.table_manager.base_table import BankTransactionTable
-from bankparse.utils import matches
 import pdfplumber
 
 class BoursoBankTransactionTable(BankTransactionTable):
@@ -10,19 +9,18 @@ class BoursoBankTransactionTable(BankTransactionTable):
         self.content = content
         self.sourceBankLabel = 'Bourso Bank'
         self.owner = owner
-        self.extraction_date = extraction_date # file edition date
+        self.extraction_date = extraction_date
         self.file_path = file_path
 
-    def mergeTransactionLabel(self, inplace:bool=False):
+    def getBalanceStatements(self):
         """
-        Some label are too long to fit in a unique cell within the pdf.
-        This function merge the split label into one unique.
-        
-        The merging is already done when the transaction table is instanciated.
-        """
-        pass
+        Method to retrieve balance statements directly from the file.
 
-    def getBalanceStatements(self): # la dernière ligne du tableau -> il faut lire le fichier complet, regarder ce qui commence par SOLDEAU (date et montant inclus dans la ligne) ou Nouveau solde en EUR (uniquement montant, date = extraction_date).
+        Returns:
+            - list[dict[str, str]]
+            keys: (source_bank, owner, extraction_date, 
+            accountId, statement_date, balance.)
+        """
         with pdfplumber.open(self.file_path) as pdf:
             words = []
             for i, page in enumerate(pdf.pages):
@@ -62,15 +60,12 @@ class BoursoBankTransactionTable(BankTransactionTable):
             {
                 'source_bank':'Bourso Bank',
                 'owner':self.owner, 
-                'file_extraction_date':self.extraction_date,
+                'extraction_date':self.extraction_date,
                 'accountId':self.accountId,
                 'statement_date':value[1],
                 'balance':value[0].replace('.', '').replace(',', '.')
             } for value in output.values()
         ]
-
-    def dropBalanceStatements(self, inplace:str=True) -> list[list[str]] | None:
-        pass
 
     def get_dict(self):
         return super().get_dict()

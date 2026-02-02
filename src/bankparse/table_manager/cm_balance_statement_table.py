@@ -1,5 +1,4 @@
 from bankparse.table_manager import BalanceStatementTable
-from typing import List
 
 class CMBankStatementTable(BalanceStatementTable):
     def __init__(self, content: list[str], owner: str, extraction_date: str, accountId:str = 'Unknown'):
@@ -11,7 +10,9 @@ class CMBankStatementTable(BalanceStatementTable):
         self.owner = owner
         self.extraction_date = extraction_date
 
-    def mergeTransactionLabel(self, inplace:bool=False) -> List[List[List[str]]] | None:
+        self.mergeTransactionLabel(inplace=True)
+
+    def mergeTransactionLabel(self, inplace:bool=False) -> list[list[list[str]]] | None:
         """
         Some label are too long to fit in a unique cell within the pdf.
         This function merge the split label into one unique.

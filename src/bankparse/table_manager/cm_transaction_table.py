@@ -1,7 +1,6 @@
 from bankparse.table_manager import BankTransactionTable
 from bankparse.utils import matches
 import re
-from typing import List
 
 class CMBankTransactionTable(BankTransactionTable):
     def __init__(self, content: list[str], owner: str, extraction_date: str, accountId:str = 'Unknown'):
@@ -11,8 +10,10 @@ class CMBankTransactionTable(BankTransactionTable):
         self.content = content
         self.sourceBankLabel = 'Crédit Mutuel'
         self.owner = owner
-        self.extraction_date = extraction_date # file edition date
+        self.extraction_date = extraction_date
         self._statement_lines_indexes = []
+
+        self.mergeTransactionLabel(inplace=True)
     
     @property
     def statement_lines_indexes(self):
@@ -25,7 +26,7 @@ class CMBankTransactionTable(BankTransactionTable):
     def statement_lines_indexes(self, value):
         print("You can't set this value.")
 
-    def mergeTransactionLabel(self, inplace:bool=False) -> List[List[List[str]]] | None:
+    def mergeTransactionLabel(self, inplace:bool=False) -> list[list[list[str]]] | None:
         """
         Some label are too long to fit in a unique cell within the pdf.
         This function merge the split label into one unique.
