@@ -1,4 +1,5 @@
 from bankparse.table_manager.base_table import BankTransactionTable
+from bankparse.table_manager.utils import ddmmyyyy_date_to_yyyymmdd
 import pdfplumber
 
 class BoursoBankTransactionTable(BankTransactionTable):
@@ -68,7 +69,12 @@ class BoursoBankTransactionTable(BankTransactionTable):
         ]
 
     def get_dict(self):
-        return super().get_dict()
+        stage_output = super().get_dict()
+        key1, key2 = list(stage_output.keys())[0], list(stage_output.keys())[2]
+        stage_output[key1] = list(map(ddmmyyyy_date_to_yyyymmdd, stage_output[key1]))
+        stage_output[key2] = list(map(ddmmyyyy_date_to_yyyymmdd, stage_output[key2]))
+
+        return stage_output
 
     def get_dataframe(self):
         return super().get_dataframe()

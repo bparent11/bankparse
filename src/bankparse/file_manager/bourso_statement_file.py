@@ -104,11 +104,11 @@ class BoursoAccountExtractionFile(AccountExtractionFile):
                         transaction_amount_index = i+1
 
                         if transaction_amount['x0'] < 500:
-                            output['Débit'].append(transaction_amount['text'])
+                            output['Débit'].append(transaction_amount['text'].replace('.', '').replace(',', '.').strip())
                             output['Crédit'].append('')
                         else:
                             output['Débit'].append('')
-                            output['Crédit'].append(transaction_amount['text'])
+                            output['Crédit'].append(transaction_amount['text'].replace('.', '').replace(',', '.').strip())
 
                         date_ope_found = False
                         first_date_valeur_found = True

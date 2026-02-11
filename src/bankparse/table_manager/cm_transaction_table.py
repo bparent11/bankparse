@@ -1,5 +1,6 @@
 from bankparse.table_manager import BankTransactionTable
 from bankparse.utils import matches
+from bankparse.table_manager.utils import ddmmyyyy_date_to_yyyymmdd
 import re
 
 class CMBankTransactionTable(BankTransactionTable):
@@ -105,7 +106,16 @@ class CMBankTransactionTable(BankTransactionTable):
             print(temp_table)
 
     def get_dict(self):
-        return super().get_dict()
+        stage_output = super().get_dict()
+        key1, key2 = list(stage_output.keys())[:2]
+        stage_output[key1] = list(map(ddmmyyyy_date_to_yyyymmdd, stage_output[key1]))
+        stage_output[key2] = list(map(ddmmyyyy_date_to_yyyymmdd, stage_output[key2]))
+
+        key1, key2 = list(stage_output.keys())[-2:]
+        stage_output[key1] = list(map(lambda x: x.replace('.', '').replace(',', '.'), stage_output[key1]))
+        stage_output[key2] = list(map(lambda x: x.replace('.', '').replace(',', '.'), stage_output[key2]))
+
+        return stage_output
     
     def get_dataframe(self):
         return super().get_dataframe()

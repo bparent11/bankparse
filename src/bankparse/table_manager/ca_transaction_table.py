@@ -97,19 +97,25 @@ class CABankTransactionTable(BankTransactionTable):
         
         return int(month)
     
-    def ddmm_date_to_ddmmyyyy(self, ddmm_date):
+    def ddmm_date_to_yyyymmdd(self, ddmm_date):
         if self.str_month_to_int(ddmm_date=ddmm_date) < 12:
             year = self.extraction_date.split('-')[0]
         else:
             year = str(int(self.extraction_date.split('-')[0]) - 1)
 
-        return "/".join((ddmm_date.replace(".", "/"), year))
+        dd, mm = ddmm_date.split('.')
+
+        return "-".join((year, mm, dd))
 
     def get_dict(self):
         stage_output = super().get_dict()
         key1, key2 = list(stage_output.keys())[:2]
-        stage_output[key1] = list(map(self.ddmm_date_to_ddmmyyyy, stage_output[key1]))
-        stage_output[key2] = list(map(self.ddmm_date_to_ddmmyyyy, stage_output[key2]))
+        stage_output[key1] = list(map(self.ddmm_date_to_yyyymmdd, stage_output[key1]))
+        stage_output[key2] = list(map(self.ddmm_date_to_yyyymmdd, stage_output[key2]))
+
+        key1, key2 = list(stage_output.keys())[-2:]
+        stage_output[key1] = list(map(lambda x: x.replace(' ', '').replace(',', '.'), stage_output[key1]))
+        stage_output[key2] = list(map(lambda x: x.replace(' ', '').replace(',', '.'), stage_output[key2]))
 
         return stage_output
 
