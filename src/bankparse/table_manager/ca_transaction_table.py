@@ -111,6 +111,10 @@ class CABankTransactionTable(BankTransactionTable):
         stage_output[key1] = list(map(self.ddmm_date_to_ddmmyyyy, stage_output[key1]))
         stage_output[key2] = list(map(self.ddmm_date_to_ddmmyyyy, stage_output[key2]))
 
+        key1, key2 = list(stage_output.keys())[-2:]
+        stage_output[key1] = list(map(lambda x: x.replace(' ', '').replace(',', '.'), stage_output[key1]))
+        stage_output[key2] = list(map(lambda x: x.replace(' ', '').replace(',', '.'), stage_output[key2]))
+
         return stage_output
 
     def get_dataframe(self):
