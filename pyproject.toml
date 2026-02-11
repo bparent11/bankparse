@@ -1,6 +1,6 @@
 [project]
 name = "bankparse"
-version = "0.0.3"
+version = "0.0.4"
 description = "bankparse package"
 readme = "README.md"
 requires-python = ">=3.11"
