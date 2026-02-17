@@ -164,6 +164,8 @@ class BoursoAccountExtractionFile(AccountExtractionFile):
                 d = extract_date_pattern.search(line)
                 if d:
                     extract_date = d.group(0)
+                    day, month, year = extract_date.split('/')
+                    extract_date = f"{year}-{month}-{day}"
 
             if owner is None:
                 m = owner_pattern.search(line)
