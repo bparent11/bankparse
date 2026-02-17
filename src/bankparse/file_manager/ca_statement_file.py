@@ -97,7 +97,6 @@ class CAAccountExtractionFile(AccountExtractionFile):
             else:
                 d = re.search(extract_date_pattern, line, flags=re.IGNORECASE)
                 if d:
-                    print(line)
                     day = d.group("day").zfill(2)
                     month = month_from_name(d.group("month"))
                     year = d.group("year")
