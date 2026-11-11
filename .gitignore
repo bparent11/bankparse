@@ -231,3 +231,6 @@ node_modules/
 
 # Local environment files
 .env.*
+
+# The Python "lib/" rule above must not hide the web app helpers
+!apps/web/src/lib/
