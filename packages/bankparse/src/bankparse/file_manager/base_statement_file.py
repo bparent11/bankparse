@@ -31,7 +31,8 @@ class AccountExtractionFile(ABC):
     """
 
     def __init__(self, file_path:str):
-        assert '.pdf' in file_path, f"Invalid format : {file_path} isn't a pdf file."
+        if not str(file_path).lower().endswith(".pdf"):
+            raise ValueError(f"Invalid format : {file_path} isn't a pdf file.")
         self.file_path = file_path
         self.owner = None
         self.extraction_date = None

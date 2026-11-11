@@ -1,6 +1,8 @@
 from bankparse.file_manager.base_statement_file import AccountExtractionFile
 from bankparse.table_manager import CMBankTransactionTable, CMBankStatementTable, CMCreditStatementTable
-from bankparse.utils import matches, month_from_name
+from bankparse.errors import ParseError
+from bankparse.parsers._common import find_owner
+from bankparse.utils import find_french_long_date, matches
 import re, pdfplumber
 from typing import Tuple, List, Dict
 
@@ -122,36 +124,13 @@ class CMAccountExtractionFile(AccountExtractionFile):
         Returns:
             - Tuple[owner (str), extract_date (str)] : the owner and the extract date.
         """
-        owner_found=False
-
-        for line in pdf_lines:
-            owner_pattern = (
-                r"(?:^|\s)"
-                r"(?P<sexe>M|Mme|Mlle)\.?\s+"
-                r"(?P<prenom>[A-Za-zÀ-ÖØ-öø-ÿ'-]+)\s+"
-                r"(?P<nom>[A-Za-zÀ-ÖØ-öø-ÿ'-]+)"
-            )
-            
-            extract_date_pattern = (
-                r"(?P<day>\d{1,2})\s+"
-                r"(?P<month>[a-zéèêûùàâîôç]+)\s+"
-                r"(?P<year>\d{4})"
-            )
-
-            if not owner_found:
-                m = (re.search(owner_pattern, line))
-                if m:
-                    owner = ' '.join([m.group("prenom").capitalize(), m.group("nom").capitalize()])
-                    owner_found=True
-            else:
-                d = re.search(extract_date_pattern, line, flags=re.IGNORECASE)
-                if d:
-                    day = d.group("day").zfill(2)
-                    month = month_from_name(d.group("month"))
-                    year = d.group("year")
-                    extract_date = f"{year}-{month}-{day}"
-
-                    return owner, extract_date
+        text = "\n".join(pdf_lines or [])
+        owner = find_owner(text)
+        for line in pdf_lines or []:
+            # The statement date is alone on its line, e.g. "31 octobre 2025".
+            if re.fullmatch(r"\s*\d{1,2}(?:er)?\s+\S+\s+\d{4}\s*", line) and (d := find_french_long_date(line)):
+                return owner, d.isoformat()
+        raise ParseError("Crédit Mutuel: statement date not found.")
 
     def accountIds_NamesMatching(self, pdf_lines: List[str] = None) -> List[Dict[str, str]]:
         """
@@ -165,22 +144,8 @@ class CMAccountExtractionFile(AccountExtractionFile):
             - List[Dict[str, str]] containing, for each match found, the accountId, the accountLabel and the owner.            
         """
         def accountIdsLines(text_lines: List[str]):
-            line_to_del = []
-            for i, line in enumerate(text_lines):
-                if all(
-                        (
-                        matches(r"(?:N°\s*)\d{11}", line),
-                        ('FRAIS' not in line)
-                        )
-                    ):
-                    pass
-                else:
-                    line_to_del.insert(0, i)
-            
-            for j in line_to_del:
-                del text_lines[j]
-
-            return text_lines
+            # Filter into a new list: never mutate self.content.
+            return [line for line in text_lines if matches(r"(?:N°\s*)\d{11}", line) and "FRAIS" not in line]
 
         if not pdf_lines:
             pdf_lines = self.content

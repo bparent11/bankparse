@@ -1,8 +1,10 @@
-from bankparse.table_manager import BalanceStatementTable
+from bankparse.table_manager import CreditStatementTable
+from typing import List
 
-class CMBankStatementTable(BalanceStatementTable):
+class CMCreditStatementTable(CreditStatementTable):
     def __init__(self, content: list[str], owner: str, extraction_date: str, accountId:str = 'Unknown'):
-        assert type(content) == list
+        if not isinstance(content, list):
+            raise TypeError("content must be a list of rows")
         super().__init__()
         self.accountId = accountId
         self.content = content
@@ -10,9 +12,7 @@ class CMBankStatementTable(BalanceStatementTable):
         self.owner = owner
         self.extraction_date = extraction_date
 
-        self.mergeTransactionLabel(inplace=True)
-
-    def mergeTransactionLabel(self, inplace:bool=False) -> list[list[list[str]]] | None:
+    def mergeTransactionLabel(self, inplace:bool=False) -> List[List[List[str]]] | None:
         """
         Some label are too long to fit in a unique cell within the pdf.
         This function merge the split label into one unique.
@@ -22,7 +22,7 @@ class CMBankStatementTable(BalanceStatementTable):
             - The merged content if inplace is False. 
         """
         line_to_del = []
-        output = self.content.copy()
+        output = [list(row) for row in self.content]
         for i, line in enumerate(output):
             if line[0] == '':
                 output[i-1][1] += ' ' + line[1]
@@ -32,7 +32,7 @@ class CMBankStatementTable(BalanceStatementTable):
             del output[i]
         
         if inplace==False:
-            return self.content
+            return output
         self.content = output
 
     def get_dict(self):

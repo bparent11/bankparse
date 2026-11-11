@@ -4,7 +4,8 @@ import pdfplumber
 
 class BoursoBankTransactionTable(BankTransactionTable):
     def __init__(self, content: list[str], owner: str, extraction_date: str, accountId: str, file_path:str):
-        assert type(content) == list
+        if not isinstance(content, list):
+            raise TypeError("content must be a list of rows")
         super().__init__()
         self.accountId = accountId
         self.content = content

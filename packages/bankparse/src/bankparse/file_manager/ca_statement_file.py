@@ -1,6 +1,8 @@
 from bankparse.file_manager.base_statement_file import AccountExtractionFile
 from bankparse.table_manager import CABankTransactionTable
-from bankparse.utils import matches, month_from_name
+from bankparse.errors import ParseError
+from bankparse.parsers._common import find_owner
+from bankparse.utils import find_french_long_date, matches
 import re, pdfplumber
 from typing import Tuple, List, Dict
 
@@ -51,14 +53,14 @@ class CAAccountExtractionFile(AccountExtractionFile):
                 transaction_tables += page.extract_tables()
             
             output = []
-            seen = set()
             for table in transaction_tables:
                 for line in table:
-                    if (line[2] == 'Total des opérations') or (str(line) in seen):
-                        pass
-                    else:
-                        seen.add(str(line))
-                        output.append(line[:-1])
+                    is_header = str(line[0] or "").startswith("Date")
+                    if line[2] == "Total des opérations" or (is_header and output):
+                        # Skip totals and the header repeated on each page. Identical operations
+                        # (e.g. two identical purchases the same day) are kept on purpose.
+                        continue
+                    output.append([c if c is not None else "" for c in line[:-1]])
 
         return output
 
@@ -73,36 +75,12 @@ class CAAccountExtractionFile(AccountExtractionFile):
         Returns:
             - Tuple[owner (str), extract_date (str)] : the owner and the extract date.
         """
-        owner_found=False
-
-        for line in pdf_lines:
-            owner_pattern = (
-                r"(?:^|\s)"
-                r"(?P<sexe>M|Mme|Mlle)\.?\s+"
-                r"(?P<prenom>[A-Za-zÀ-ÖØ-öø-ÿ'-]+)\s+"
-                r"(?P<nom>[A-Za-zÀ-ÖØ-öø-ÿ'-]+)"
-            )
-            
-            extract_date_pattern = (
-                r"(?P<day>\d{1,2})\s+"
-                r"(?P<month>[a-zéèêûùàâîôç]+)\s+"
-                r"(?P<year>\d{4})"
-            )
-
-            if not owner_found:
-                m = (re.search(owner_pattern, line))
-                if m:
-                    owner = ' '.join([m.group("prenom").capitalize(), m.group("nom").capitalize()])
-                    owner_found=True
-            else:
-                d = re.search(extract_date_pattern, line, flags=re.IGNORECASE)
-                if d:
-                    day = d.group("day").zfill(2)
-                    month = month_from_name(d.group("month"))
-                    year = d.group("year")
-                    extract_date = f"{year}-{month}-{day}"
-
-                    return owner, extract_date
+        owner = find_owner("\n".join(pdf_lines or []))
+        for line in pdf_lines or []:
+            m = re.search(r"Date d.arr\S*t\S*\s*:\s*(.+)", line, flags=re.IGNORECASE)
+            if m and (d := find_french_long_date(m.group(1))):
+                return owner, d.isoformat()
+        raise ParseError("Crédit Agricole: statement date ('Date d'arrêté') not found.")
 
     def accountIds_NamesMatching(self, pdf_lines: List[str] = None) -> List[Dict[str, str]]:
         """

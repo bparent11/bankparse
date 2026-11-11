@@ -217,3 +217,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+# Private data - never commit bank statements, tokens or databases
+data/
+uploads/
+*.db
+*.sqlite
+*token*.txt
+*Token*.txt
+tests/fixtures/
+packages/bankparse/tests/fixtures/
+node_modules/
+.next/
+
+# Local environment files
+.env.*

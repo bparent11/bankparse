@@ -1,0 +1,33 @@
+[project]
+name = "bankparse"
+version = "0.1.0"
+description = "Extract operations, balances and accounts from French bank statement PDFs (Crédit Agricole, Crédit Mutuel, Boursorama)."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name="bparent11" },
+]
+dependencies = [
+    "pandas>=2.2",
+    "pdfplumber>=0.11.4",
+    "unidecode>=1.3",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Natural Language :: French",
+    "Topic :: Office/Business :: Financial",
+]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+exclude = ["tests/fixtures"]
+
+[project.urls]
+Homepage = "https://github.com/bparent11/bankparse"
+Issues = "https://github.com/bparent11/bankparse/issues"
