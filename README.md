@@ -1,38 +1,62 @@
 # bankparse
-**bankparse** is a Python package designed to simplify the extraction of your **own** bank data. Indeed in France, it's common that your bank doesn't give you clear analysis on what you spend if you don't subscribe to it. You only receive a pdf file of all your expenses and income of the month. That's why bankparse is here, to simplify the extraction of your data from those pdf files. You can get your data as JSON format or pandas DataFrame with 3 lines of code.
 
-## Table of Contents
+Turn the monthly PDF statements of your French bank into structured, searchable data, **on your own computer**.
 
-- [Vision of the project](#vision)
-- [Features](#features)
-- [Installation](#installation)
-- [Examples](#examples)
+- [`packages/bankparse`](packages/bankparse): the Python library that reads the PDFs (Crédit Agricole, Crédit Mutuel, Boursorama), published on PyPI.
+- [`apps/api`](apps/api): a FastAPI service that imports statements into SQLite, deduplicates operations and exports them.
+- [`apps/web`](apps/web): a Next.js + Tailwind + shadcn/ui interface to upload statements and browse operations.
 
-## Vision
-As develop in the introduction, the project aims to give back people their own data in an easy way. At this moment, the package will mainly cover the French market.
+Nothing leaves your machine: no account, no cloud, the database and the uploaded PDFs live in `./data`.
 
-## Features
+## Run the app
 
-### _bankparse.file_manager module_
-This module is designed to manage all kind of files provided by the banks.
-It helps you to get the owner and the extract date of the file, in addition to
-retrieve your account's data (label, ID, ...).
+### With Docker (simplest)
 
-The available banks are : Crédit Agricole, Crédit Mutuel, Bourso Bank.
+```bash
+docker compose up -d --build
+```
 
-[See more about available features](https://github.com/bparent11/bankparse/tree/main/src/bankparse/file_manager)
+Open http://localhost:3000. Data is stored in `./data` (SQLite + original PDFs). Ports are bound to `127.0.0.1` only.
 
-### _bankparse.table_manager module_
-This module is designed to manage all kind of tables within the statement files provided by the banks.
-It helps you to act on the data, retrieve transactions and balance statements.
-Different kind of table do exist, but I don't have access to all of these yet, that's why what you're looking for could not be available at this moment.
+### For development
 
-The available banks are : Crédit Agricole, Crédit Mutuel, Bourso Bank.
+Requirements: [uv](https://docs.astral.sh/uv/) and Node.js ≥ 20.
 
-[See more about available features](https://github.com/bparent11/bankparse/tree/main/src/bankparse/table_manager)
+```bash
+uv sync                                   # Python workspace (library + API)
+uv run bankparse-app serve                # API on http://127.0.0.1:8000  (docs: /docs)
 
-## Installation
-Coming soon.
+cd apps/web && npm install && npm run dev # web on http://localhost:3000, /api/* is proxied to FastAPI
+```
 
-## Examples
-Coming soon.
+### Bulk import existing statements
+
+```bash
+uv run bankparse-app import path/to/statements/     # folders are scanned recursively
+```
+
+Re-running it is safe: already imported files and operations are skipped.
+
+## How deduplication works
+
+1. **File level**: a PDF is identified by its SHA-256. Uploading the same file twice does nothing.
+2. **Operation level**: each operation gets a fingerprint (bank, account, dates, normalized label, amount, and its rank among identical operations of the statement). Overlapping statements do not create duplicates, while two genuine identical purchases on the same day are both kept.
+3. Deleting a statement removes only the operations no other statement contains.
+
+Each imported statement is also checked: `opening balance + operations == closing balance` (shown as *Soldes vérifiés* in the app).
+
+## Tests
+
+```bash
+uv run pytest                                       # library + API
+BANKPARSE_STATEMENTS=../data/bronze-layer uv run pytest packages/bankparse   # + your own statements
+```
+
+Real statements contain personal data and are never committed. Put them in `packages/bankparse/tests/fixtures/` (gitignored) or point `BANKPARSE_STATEMENTS` to a folder.
+
+After changing the API, regenerate the TypeScript client with `npm run gen:api` in `apps/web`.
+
+## Roadmap
+
+- Automatic categorization (groceries, rent, salary…) with a **local LLM** (Ollama) and editable rules. The `category` column is already in the database.
+- Boursorama brokerage statements (*espèces*, *titres*) and more banks.

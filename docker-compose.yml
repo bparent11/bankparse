@@ -1,0 +1,23 @@
+# Local only: ports are bound to 127.0.0.1 so the app is not reachable from the network.
+# Data (SQLite database + uploaded PDFs) lives in ./data on your machine.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    volumes:
+      - ./data:/data
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+
+  web:
+    build:
+      context: apps/web
+      args:
+        API_URL: http://api:8000
+    depends_on:
+      - api
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
