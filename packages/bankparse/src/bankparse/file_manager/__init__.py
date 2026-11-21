@@ -28,7 +28,8 @@ class FileFactory:
             file_path (str): path of the pdf file.
 
         Returns:
-            One of the implemented class within bankparse or None if the file hasn't been recognized.
+            One of the implemented class within bankparse or None if the file hasn't been recognized
+            (or comes from a bank only supported by :func:`bankparse.parse`, such as LCL).
         """
         with pdfplumber.open(file_path) as pdf:
             first_page_text = pdf.pages[0].extract_text() or ""
@@ -36,7 +37,8 @@ class FileFactory:
             bank = detect_bank(first_page_text)
         except UnsupportedStatementError:
             return None
-        return _CLASSES[bank](file_path=file_path)
+        cls = _CLASSES.get(bank)
+        return cls(file_path=file_path) if cls else None
 
 
 __all__ = [

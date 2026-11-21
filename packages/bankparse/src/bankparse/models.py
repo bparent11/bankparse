@@ -53,8 +53,8 @@ class BalanceCheck:
 
 @dataclass
 class ParsedStatement:
-    bank: str  # "Crédit Agricole" | "Crédit Mutuel" | "Boursorama"
-    bank_code: str  # "CA" | "CM" | "BOURSO"
+    bank: str  # "Crédit Agricole" | "Crédit Mutuel" | "Boursorama" | "LCL"
+    bank_code: str  # "CA" | "CM" | "BOURSO" | "LCL"
     owner: str | None
     statement_date: date
     accounts: list[Account] = field(default_factory=list)

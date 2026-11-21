@@ -14,6 +14,7 @@ import pytest
 from bankparse.file_manager import FileFactory
 
 FIXTURES = Path(__file__).parent / "fixtures"
+LEGACY_BANKS = {"CA", "CM", "BOURSO"}  # banks added after 0.1.0 (LCL) only have bankparse.parse()
 
 
 def _statements() -> list[Path]:
@@ -27,12 +28,18 @@ pytestmark = pytest.mark.skipif(not STATEMENTS, reason="no private statement PDF
 
 
 def _is_brokerage(path: Path) -> bool:
-    return path.name.startswith(("Relevés-", "Relevé-"))  # Bourso 'espèces' / 'titres': not supported yet
+    # Bourso 'espèces' / 'titres' / 'coupons-dividendes': brokerage documents, not supported yet
+    return path.name.startswith(("Relevés-", "Relevé-"))
+
+
+def _is_unsupported(path: Path) -> bool:
+    """Documents that are not account statements and must be rejected cleanly."""
+    return _is_brokerage(path) or path.name.startswith("QUIT_")  # rent receipts ("Quittance")
 
 
 @pytest.mark.parametrize("path", STATEMENTS, ids=lambda p: p.name)
 def test_statement_parses_and_balances(path: Path):
-    if _is_brokerage(path):
+    if _is_unsupported(path):
         with pytest.raises(bankparse.UnsupportedStatementError):
             bankparse.parse(path)
         return
@@ -51,7 +58,7 @@ def test_statement_parses_and_balances(path: Path):
 
 @pytest.mark.parametrize("path", STATEMENTS, ids=lambda p: p.name)
 def test_parse_from_bytes_equals_parse_from_path(path: Path):
-    if _is_brokerage(path):
+    if _is_unsupported(path):
         pytest.skip("unsupported document")
     assert bankparse.parse(path.read_bytes()).to_dict() == bankparse.parse(path).to_dict()
 
@@ -59,7 +66,7 @@ def test_parse_from_bytes_equals_parse_from_path(path: Path):
 @pytest.mark.parametrize("path", STATEMENTS, ids=lambda p: p.name)
 def test_legacy_api_still_works(path: Path):
     extraction_file = FileFactory.handle_file(str(path))
-    if _is_brokerage(path):
+    if _is_unsupported(path) or bankparse.parse(path).bank_code not in LEGACY_BANKS:
         assert extraction_file is None
         return
     for table in extraction_file.transaction_tables:

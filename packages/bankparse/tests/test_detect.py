@@ -21,6 +21,22 @@ def test_bourso_brokerage_statement_is_unsupported():
         detect_bank("Boursorama Relevé espèces PEA")
 
 
+def test_lcl_current_account_and_savings():
+    assert detect_bank("RELEVE DE COMPTE\nBIC : CRLYFRPP\nECRITURES DE LA PERIODE") == "LCL"
+    # Savings statements have no BIC: the "Crédit Lyonnais" legal footer is used instead.
+    assert detect_bank("LIVRET A\nECRITURES DE LA PERIODE\nCrédit Lyonnais-SA au capital de") == "LCL"
+
+
+def test_lcl_statement_mentioning_credit_mutuel_is_still_lcl():
+    text = "RELEVE DE COMPTE\nECRITURES DE LA PERIODE\nVIR SEPA CREDIT MUTUEL CMCIFR\nCRLYFRPP"
+    assert detect_bank(text) == "LCL"
+
+
+def test_non_statement_is_unsupported():
+    with pytest.raises(UnsupportedStatementError):
+        detect_bank("Quittance\nFacture n° 2026/10\nTotal dû : 410.00 €")
+
+
 def test_unknown_bank():
     with pytest.raises(UnsupportedStatementError):
         detect_bank("BNP PARIBAS relevé")

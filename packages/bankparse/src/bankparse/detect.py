@@ -11,13 +11,14 @@ from bankparse.errors import UnsupportedStatementError
 CA = "CA"
 CM = "CM"
 BOURSO = "BOURSO"
+LCL = "LCL"
 
-BANK_NAMES = {CA: "Crédit Agricole", CM: "Crédit Mutuel", BOURSO: "Boursorama"}
+BANK_NAMES = {CA: "Crédit Agricole", CM: "Crédit Mutuel", BOURSO: "Boursorama", LCL: "LCL"}
 
 
 def detect_bank(first_page_text: str) -> str:
     """
-    Return the bank code ("CA", "CM" or "BOURSO") of a statement from the text of its first page.
+    Return the bank code ("CA", "CM", "BOURSO" or "LCL") of a statement from the text of its first page.
 
     Several signals are used for each bank (name, header, BIC, IBAN bank code) because the layouts
     changed over the years (e.g. old Crédit Mutuel statements only say "CCM <city>").
@@ -34,6 +35,10 @@ def detect_bank(first_page_text: str) -> str:
         return CA
     if "BOUSFRPP" in compact and "MOUVEMENTSENEUR" in compact:
         return BOURSO
+    # LCL: every statement (current account and savings) has the "ECRITURES DE LA PERIODE" section and the
+    # "Crédit Lyonnais" legal footer; the current account also prints the BIC CRLYFRPP.
+    if "ECRITURESDELAPERIODE" in compact and ("CRLYFRPP" in compact or "CREDITLYONNAIS" in compact):
+        return LCL
     if "RELEVEETINFORMATIONSBANCAIRES" in compact or "CMCIFR" in compact or "FR761027" in compact:
         return CM
 
@@ -46,4 +51,4 @@ def detect_bank(first_page_text: str) -> str:
     if "CREDIT MUTUEL" in text or "CREDITMUTUEL" in compact:
         return CM
 
-    raise UnsupportedStatementError("Unrecognized document: not a Crédit Agricole, Crédit Mutuel or Boursorama statement.")
+    raise UnsupportedStatementError("Unrecognized document: not a Crédit Agricole, Crédit Mutuel, Boursorama or LCL statement.")

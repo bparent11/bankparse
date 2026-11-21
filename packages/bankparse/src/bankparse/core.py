@@ -6,13 +6,14 @@ from typing import BinaryIO
 
 from pdfminer.pdfparser import PDFSyntaxError
 
-from bankparse.detect import BOURSO, CA, CM, detect_bank
+from bankparse.detect import BOURSO, CA, CM, LCL, detect_bank
 from bankparse.errors import ParseError, UnsupportedStatementError
 from bankparse.models import ParsedStatement
-from bankparse.parsers import parse_bourso, parse_ca, parse_cm
+from bankparse.parsers import parse_bourso, parse_ca, parse_cm, parse_lcl
 from bankparse.parsers._common import load_document, open_pdf
 
-_PARSERS = {CA: parse_ca, CM: parse_cm, BOURSO: parse_bourso}
+_PARSERS = {CA: parse_ca, CM: parse_cm, BOURSO: parse_bourso, LCL: parse_lcl}
+_WORD_LAYOUTS = {BOURSO, LCL}  # no ruled table: parsed from word positions
 
 
 def parse(source: str | Path | bytes | BinaryIO) -> ParsedStatement:
@@ -46,7 +47,7 @@ def parse(source: str | Path | bytes | BinaryIO) -> ParsedStatement:
             raise UnsupportedStatementError("Empty PDF.")
         first_text = pdf.pages[0].extract_text() or ""
         bank = detect_bank(first_text)
-        doc = load_document(pdf, with_words=bank == BOURSO, with_tables=bank != BOURSO)
+        doc = load_document(pdf, with_words=bank in _WORD_LAYOUTS, with_tables=bank not in _WORD_LAYOUTS)
 
     try:
         return _PARSERS[bank](doc)

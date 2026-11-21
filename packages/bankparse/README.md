@@ -9,6 +9,7 @@ Supported statements:
 | Crédit Agricole | Relevé de comptes | one account per statement, labels on several lines are merged |
 | Crédit Mutuel | Relevé et informations bancaires | several accounts per statement, savings and loans summary |
 | Boursorama / BoursoBank | Relevé de compte | brokerage *espèces* / *titres* statements are not supported yet |
+| LCL (Crédit Lyonnais) | Relevé de compte, Livret A, Livret Jeune, Compte sur livret, Plan Épargne Logement | one account per statement |
 
 Every statement is **self-checked**: for each account, `opening balance + Σ operations == closing balance`. If an operation is missed or misread, the check fails, so you know whether you can trust the result.
 
@@ -51,16 +52,20 @@ except bankparse.ParseError:
 
 ### Output model
 
-- `ParsedStatement`: `bank`, `bank_code` (`CA` | `CM` | `BOURSO`), `owner`, `statement_date`, `accounts`, `transactions`, `balances`, `checks`, `warnings`
+- `ParsedStatement`: `bank`, `bank_code` (`CA` | `CM` | `BOURSO` | `LCL`), `owner`, `statement_date`, `accounts`, `transactions`, `balances`, `checks`, `warnings`
 - `Transaction`: `account_id`, `operation_date`, `value_date`, `label`, `amount` (`Decimal`, negative = debit)
 - `BalanceSnapshot`: `account_id`, `date`, `amount`
 - `BalanceCheck`: `opening`, `closing`, `total`, `ok`
 
 ### Legacy API
 
-The class-based API from 0.0.x (`bankparse.file_manager.FileFactory`, `*AccountExtractionFile`, `*TransactionTable.get_dataframe()`) is still available and was fixed in 0.1.0, but `bankparse.parse()` is the recommended entry point.
+The class-based API from 0.0.x (`bankparse.file_manager.FileFactory`, `*AccountExtractionFile`, `*TransactionTable.get_dataframe()`) is still available and was fixed in 0.1.0, but `bankparse.parse()` is the recommended entry point. LCL is only supported by `bankparse.parse()` (`FileFactory.handle_file` returns `None` for it).
 
 ## Changelog
+
+**Unreleased**
+- New bank: LCL (current account and savings statements).
+- `FileFactory.handle_file` returns `None` instead of crashing for banks that have no legacy class.
 
 **0.1.0**
 - New `bankparse.parse()` API with a normalized, bank-agnostic output model and built-in balance checks.
