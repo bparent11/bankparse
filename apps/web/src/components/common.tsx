@@ -55,6 +55,15 @@ export function BankBadge({ code }: { code?: string | null }) {
   );
 }
 
+export function Stat({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
+  return (
+    <div className={cn("rounded-xl border bg-card px-4 py-3 shadow-xs", className)}>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-lg font-semibold tabular-nums">{children}</p>
+    </div>
+  );
+}
+
 export function EmptyState({
   icon: Icon,
   title,
@@ -65,8 +74,10 @@ export function EmptyState({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed px-6 py-14 text-center">
-      <Icon className="mb-3 size-8 text-muted-foreground" />
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed bg-card/50 px-6 py-14 text-center">
+      <span className="mb-3 flex size-12 items-center justify-center rounded-full bg-accent text-accent-foreground">
+        <Icon className="size-6" />
+      </span>
       <p className="font-medium">{title}</p>
       {children && <div className="mt-2 max-w-md text-sm text-muted-foreground">{children}</div>}
     </div>
@@ -85,18 +96,27 @@ export function ErrorMessage({ error }: { error: unknown }) {
 export function CheckBadge({ ok }: { ok?: boolean | null }) {
   if (ok === true)
     return (
-      <span className="flex shrink-0 items-center gap-1 text-xs text-positive" title="Solde initial + opérations = solde final">
+      <span
+        className="flex shrink-0 items-center gap-1 text-xs text-positive"
+        title="Solde initial + opérations = solde final"
+      >
         <ShieldCheck className="size-4" /> Soldes vérifiés
       </span>
     );
   if (ok === false)
     return (
-      <span className="flex shrink-0 items-center gap-1 text-xs text-amber-600" title="Les opérations lues ne correspondent pas aux soldes du relevé">
+      <span
+        className="flex shrink-0 items-center gap-1 text-xs text-amber-600"
+        title="Les opérations lues ne correspondent pas aux soldes du relevé"
+      >
         <AlertTriangle className="size-4" /> Écart de solde
       </span>
     );
   return (
-    <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground" title="Le relevé ne contient pas les deux soldes">
+    <span
+      className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground"
+      title="Le relevé ne contient pas les deux soldes"
+    >
       <ShieldQuestion className="size-4" /> Non vérifiable
     </span>
   );

@@ -151,7 +151,7 @@ export function FilesView() {
           </Link>
         </EmptyState>
       ) : (
-        <div className="rounded-xl border">
+        <div className="rounded-xl border bg-card shadow-xs">
           <Table>
             <TableHeader>
               <TableRow>

@@ -8,6 +8,18 @@ import { cn } from "@/lib/utils";
 
 export type MultiOption = { value: string; label: string; hint?: string };
 
+/** Short text for a selection: "Tous les comptes", "Livret A", "Tout sauf Livret A", "3 comptes", "Aucun (comptes)". */
+export function multiSummary(options: MultiOption[], value: string[] | null, label: string, allLabel: string): string {
+  const selected = new Set(value ?? options.map((o) => o.value));
+  if (value === null || options.every((o) => selected.has(o.value))) return allLabel;
+  if (selected.size === 0) return `Aucun (${label})`;
+  const names = options.filter((o) => selected.has(o.value)).map((o) => o.label);
+  if (names.length === 1) return names[0];
+  const missing = options.filter((o) => !selected.has(o.value)).map((o) => o.label);
+  if (missing.length === 1) return `Tout sauf ${missing[0]}`;
+  return `${names.length} ${label}`;
+}
+
 /**
  * Drop-down list with checkboxes: everything, several values, or everything but one (select all, then untick).
  * ``value`` null means "everything" (no filter); an empty array means nothing is selected.
@@ -46,19 +58,9 @@ export function MultiSelect({
     commit(next);
   };
 
-  const summary = (): string => {
-    if (isAll) return allLabel;
-    if (selected.size === 0) return `Aucun (${label})`;
-    const names = options.filter((o) => selected.has(o.value)).map((o) => o.label);
-    if (names.length === 1) return names[0];
-    const missing = options.filter((o) => !selected.has(o.value)).map((o) => o.label);
-    if (missing.length === 1) return `Tout sauf ${missing[0]}`;
-    return `${names.length} ${label}`;
-  };
+  const summary = () => multiSummary(options, value, label, allLabel);
 
-  const visible = search
-    ? options.filter((o) => o.label.toLowerCase().includes(search.trim().toLowerCase()))
-    : options;
+  const visible = search ? options.filter((o) => o.label.toLowerCase().includes(search.trim().toLowerCase())) : options;
 
   return (
     <Popover.Root onOpenChange={(open) => !open && setSearch("")}>
@@ -94,7 +96,11 @@ export function MultiSelect({
                 {isAll ? "Tout" : selected.size} / {options.length}
               </span>
               <span className="flex gap-3">
-                <button type="button" className="font-medium text-primary hover:underline" onClick={() => onChange(null)}>
+                <button
+                  type="button"
+                  className="font-medium text-primary hover:underline"
+                  onClick={() => onChange(null)}
+                >
                   Tout
                 </button>
                 <button type="button" className="font-medium text-primary hover:underline" onClick={() => onChange([])}>
