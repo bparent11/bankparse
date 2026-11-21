@@ -4,6 +4,7 @@ import { WalletCards } from "lucide-react";
 import Link from "next/link";
 
 import { AppNav } from "@/components/app-nav";
+import { SpaceSwitcher } from "@/components/space-switcher";
 
 import { Providers } from "./providers";
 import "./globals.css";
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 <WalletCards className="size-5" />
                 bankparse
               </Link>
+              <SpaceSwitcher />
               <AppNav />
             </aside>
             <main className="min-w-0 flex-1 p-4 md:p-8">{children}</main>

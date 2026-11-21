@@ -4,6 +4,213 @@
  */
 
 export interface paths {
+    "/api/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Categories
+         * @description Categories are shared by every space; the operation counts are those of ``space_id``.
+         */
+        get: operations["list_categories_api_categories_get"];
+        put?: never;
+        /** Create Category */
+        post: operations["create_category_api_categories_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories/{category_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Category */
+        delete: operations["delete_category_api_categories__category_id__delete"];
+        options?: never;
+        head?: never;
+        /**
+         * Update Category
+         * @description Rename and/or describe a category (the description is given to the LLM).
+         */
+        patch: operations["update_category_api_categories__category_id__patch"];
+        trace?: never;
+    };
+    "/api/transactions/{transaction_id}/category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Set Transaction Category */
+        patch: operations["set_transaction_category_api_transactions__transaction_id__category_patch"];
+        trace?: never;
+    };
+    "/api/transactions/{transaction_id}/similar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Similar Transactions
+         * @description Operations with a similar label (shown before applying a correction to them too).
+         */
+        get: operations["similar_transactions_api_transactions__transaction_id__similar_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transactions/{transaction_id}/validation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate Transaction
+         * @description Validate (or un-validate) the category the LLM proposed for one operation.
+         */
+        post: operations["validate_transaction_api_transactions__transaction_id__validation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transactions/validation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Validate Filtered
+         * @description Validate every LLM proposal matching the same filters as the operations list.
+         */
+        post: operations["validate_filtered_api_transactions_validation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categorize/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Categorize Status */
+        get: operations["categorize_status_api_categorize_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categorize/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Categorize Count
+         * @description How many operations a run with these options would process.
+         */
+        get: operations["categorize_count_api_categorize_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Categorization */
+        post: operations["start_categorization_api_categorize_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categorize/jobs/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Latest Job */
+        get: operations["latest_job_api_categorize_jobs_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categorize/jobs/{job_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Job */
+        post: operations["cancel_job_api_categorize_jobs__job_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -21,6 +228,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/spaces": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Spaces
+         * @description One space per user. Spaces detected from a holder and left without any account are not listed.
+         */
+        get: operations["list_spaces_api_spaces_get"];
+        put?: never;
+        /**
+         * Add Space
+         * @description Add a user by hand, then import their statements for them.
+         */
+        post: operations["add_space_api_spaces_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/spaces/{space_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete Space
+         * @description Remove a user who has no account (move or delete their statements first).
+         */
+        delete: operations["delete_space_api_spaces__space_id__delete"];
+        options?: never;
+        head?: never;
+        /** Rename Space */
+        patch: operations["rename_space_api_spaces__space_id__patch"];
+        trace?: never;
+    };
     "/api/uploads": {
         parameters: {
             query?: never;
@@ -33,6 +285,9 @@ export interface paths {
         /**
          * Upload
          * @description Import one or several statement PDFs. Each file gets its own result, an error never aborts the batch.
+         *
+         *     ``space_id`` (optional): the user these statements belong to, chosen in the app. Without it, the holder read
+         *     on each statement decides (a new holder gets a new user).
          */
         post: operations["upload_api_uploads_post"];
         delete?: never;
@@ -48,7 +303,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Files */
+        /**
+         * List Files
+         * @description Files of a space, plus the unreadable ones (no holder known), shown in every space.
+         */
         get: operations["list_files_api_files_get"];
         put?: never;
         post?: never;
@@ -234,6 +492,8 @@ export interface components {
             statement_label: string;
             /** Owner */
             owner: string | null;
+            /** Space Id */
+            space_id: number | null;
             /** Transaction Count */
             transaction_count: number;
             /** First Operation */
@@ -249,6 +509,8 @@ export interface components {
         AccountUpdate: {
             /** Label */
             label?: string | null;
+            /** Space Id */
+            space_id?: number | null;
         };
         /** BalanceOut */
         BalanceOut: {
@@ -264,6 +526,141 @@ export interface components {
         Body_upload_api_uploads_post: {
             /** Files */
             files: string[];
+            /** Space Id */
+            space_id?: number | null;
+        };
+        /** CategorizationJobOut */
+        CategorizationJobOut: {
+            /** Id */
+            id: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "running" | "done" | "failed" | "cancelled";
+            /** Mode */
+            mode: string | null;
+            /** Model */
+            model: string | null;
+            /** Batch Size */
+            batch_size: number | null;
+            /** Date From */
+            date_from: string | null;
+            /** Date To */
+            date_to: string | null;
+            /** Total */
+            total: number;
+            /** Done */
+            done: number;
+            /** Merchants Total */
+            merchants_total: number;
+            /** Merchants Done */
+            merchants_done: number;
+            /** Space Id */
+            space_id: number | null;
+            /** Message */
+            message: string | null;
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+        };
+        /** CategorizeCount */
+        CategorizeCount: {
+            /** Count */
+            count: number;
+        };
+        /** CategorizeStart */
+        CategorizeStart: {
+            /** Model */
+            model: string;
+            /**
+             * Mode
+             * @default new
+             * @enum {string}
+             */
+            mode: "new" | "all";
+            /** Date From */
+            date_from?: string | null;
+            /** Date To */
+            date_to?: string | null;
+            /**
+             * Batch Size
+             * @default 1
+             */
+            batch_size: number;
+            /** Space Id */
+            space_id?: number | null;
+        };
+        /** CategorizeStatus */
+        CategorizeStatus: {
+            /** Ollama Ok */
+            ollama_ok: boolean;
+            /** Reason */
+            reason: string | null;
+            /** Models */
+            models: components["schemas"]["InstalledModelOut"][];
+            /** Default Model */
+            default_model: string | null;
+            /** Fast Model */
+            fast_model: string | null;
+            /** Missing Models */
+            missing_models: string[];
+            /** Default Batch Size */
+            default_batch_size: number;
+            /** Never Categorized */
+            never_categorized: boolean;
+            /** Uncategorized */
+            uncategorized: number;
+            /** Unknown */
+            unknown: number;
+            /** To Review */
+            to_review: number;
+        };
+        /** CategoryIn */
+        CategoryIn: {
+            /** Name */
+            name: string;
+        };
+        /** CategoryOut */
+        CategoryOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Description */
+            description: string | null;
+            /** Is System */
+            is_system: boolean;
+            /** Transaction Count */
+            transaction_count: number;
+        };
+        /** CategoryPatch */
+        CategoryPatch: {
+            /** Name */
+            name?: string | null;
+            /** Description */
+            description?: string | null;
+        };
+        /** CategoryUpdate */
+        CategoryUpdate: {
+            /** Category */
+            category: string;
+            /** Reason */
+            reason?: string | null;
+            /**
+             * Apply To Similar
+             * @default false
+             */
+            apply_to_similar: boolean;
+        };
+        /** CategoryUpdateResult */
+        CategoryUpdateResult: {
+            /** Updated */
+            updated: number;
         };
         /** FileOut */
         FileOut: {
@@ -335,6 +732,22 @@ export interface components {
              * @default []
              */
             warnings: string[];
+            /** Space Id */
+            space_id?: number | null;
+            /** Space Name */
+            space_name?: string | null;
+            /**
+             * Space Created
+             * @default false
+             */
+            space_created: boolean;
+        };
+        /** InstalledModelOut */
+        InstalledModelOut: {
+            /** Name */
+            name: string;
+            /** Size Gb */
+            size_gb: number;
         };
         /** MonthTotal */
         MonthTotal: {
@@ -344,6 +757,29 @@ export interface components {
             credit: number;
             /** Debit */
             debit: number;
+        };
+        /** SimilarOut */
+        SimilarOut: {
+            /** Count */
+            count: number;
+            /** Examples */
+            examples: string[];
+        };
+        /** SpaceOut */
+        SpaceOut: {
+            /** Id */
+            id: number;
+            /** Name */
+            name: string;
+            /** Account Count */
+            account_count: number;
+            /** Transaction Count */
+            transaction_count: number;
+        };
+        /** SpaceUpdate */
+        SpaceUpdate: {
+            /** Name */
+            name: string;
         };
         /** Summary */
         Summary: {
@@ -385,6 +821,10 @@ export interface components {
             amount: number;
             /** Category */
             category: string | null;
+            /** Category Source */
+            category_source: string | null;
+            /** Category Model */
+            category_model: string | null;
         };
         /** TransactionPage */
         TransactionPage: {
@@ -414,6 +854,14 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** ValidationIn */
+        ValidationIn: {
+            /**
+             * Validated
+             * @default true
+             */
+            validated: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -423,6 +871,443 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_categories_api_categories_get: {
+        parameters: {
+            query?: {
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_category_api_categories_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_category_api_categories__category_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_category_api_categories__category_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                category_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryPatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_transaction_category_api_transactions__transaction_id__category_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategoryUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryUpdateResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    similar_transactions_api_transactions__transaction_id__similar_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimilarOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_transaction_api_transactions__transaction_id__validation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ValidationIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryUpdateResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    validate_filtered_api_transactions_validation_post: {
+        parameters: {
+            query?: {
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
+                account_id?: number[] | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                q?: string | null;
+                min_amount?: number | null;
+                max_amount?: number | null;
+                direction?: ("debit" | "credit") | null;
+                category?: string | null;
+                uncategorized?: boolean;
+                to_review?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategoryUpdateResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    categorize_status_api_categorize_status_get: {
+        parameters: {
+            query?: {
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorizeStatus"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    categorize_count_api_categorize_count_get: {
+        parameters: {
+            query?: {
+                mode?: "new" | "all";
+                date_from?: string | null;
+                date_to?: string | null;
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorizeCount"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_categorization_api_categorize_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CategorizeStart"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorizationJobOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    latest_job_api_categorize_jobs_latest_get: {
+        parameters: {
+            query?: {
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CategorizationJobOut"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_job_api_categorize_jobs__job_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                job_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;
@@ -441,6 +1326,123 @@ export interface operations {
                     "application/json": {
                         [key: string]: unknown;
                     };
+                };
+            };
+        };
+    };
+    list_spaces_api_spaces_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceOut"][];
+                };
+            };
+        };
+    };
+    add_space_api_spaces_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpaceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_space_api_spaces__space_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_space_api_spaces__space_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                space_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SpaceUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SpaceOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -480,7 +1482,10 @@ export interface operations {
     };
     list_files_api_files_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -494,6 +1499,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FileOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -580,7 +1594,10 @@ export interface operations {
     };
     list_accounts_api_accounts_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -594,6 +1611,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AccountOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -671,6 +1697,8 @@ export interface operations {
                 page_size?: number;
                 sort?: "operation_date" | "value_date" | "amount" | "label" | "account";
                 order?: "asc" | "desc";
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
                 account_id?: number[] | null;
                 date_from?: string | null;
                 date_to?: string | null;
@@ -679,6 +1707,8 @@ export interface operations {
                 max_amount?: number | null;
                 direction?: ("debit" | "credit") | null;
                 category?: string | null;
+                uncategorized?: boolean;
+                to_review?: boolean;
             };
             header?: never;
             path?: never;
@@ -712,6 +1742,8 @@ export interface operations {
                 format?: "csv" | "xlsx" | "json";
                 sort?: "operation_date" | "value_date" | "amount" | "label" | "account";
                 order?: "asc" | "desc";
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
                 account_id?: number[] | null;
                 date_from?: string | null;
                 date_to?: string | null;
@@ -720,6 +1752,8 @@ export interface operations {
                 max_amount?: number | null;
                 direction?: ("debit" | "credit") | null;
                 category?: string | null;
+                uncategorized?: boolean;
+                to_review?: boolean;
             };
             header?: never;
             path?: never;
@@ -749,7 +1783,10 @@ export interface operations {
     };
     summary_api_summary_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Space (one per account holder); omitted: every space */
+                space_id?: number | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -763,6 +1800,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Summary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

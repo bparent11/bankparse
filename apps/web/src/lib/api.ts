@@ -13,6 +13,7 @@ export type StatementFile = Schemas["FileOut"];
 export type ImportResult = Schemas["ImportResultOut"];
 export type Summary = Schemas["Summary"];
 export type Balance = Schemas["BalanceOut"];
+export type Space = Schemas["SpaceOut"];
 
 export type TransactionQuery = NonNullable<paths["/api/transactions"]["get"]["parameters"]["query"]>;
 

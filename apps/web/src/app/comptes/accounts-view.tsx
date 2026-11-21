@@ -8,6 +8,7 @@ import { Area, AreaChart, YAxis } from "recharts";
 import { toast } from "sonner";
 
 import { BankBadge, EmptyState, ErrorMessage, PageHeader } from "@/components/common";
+import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
@@ -25,6 +26,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { api, unwrap, type Account } from "@/lib/api";
 import { formatDate, formatEUR } from "@/lib/format";
 import { useAccounts, useBalances, useInvalidateData } from "@/lib/queries";
+import { useSpace } from "@/lib/space";
 import { cn } from "@/lib/utils";
 
 export function AccountsView() {
@@ -76,7 +78,7 @@ function AccountCard({ account, onRename }: { account: Account; onRename: () => 
               <CardDescription className="truncate">{account.statement_label}</CardDescription>
             )}
           </div>
-          <Button variant="ghost" size="icon-sm" aria-label={`Renommer ${account.label}`} onClick={onRename}>
+          <Button variant="ghost" size="icon-sm" aria-label={`Modifier ${account.label}`} onClick={onRename}>
             <Pencil />
           </Button>
         </div>
@@ -102,7 +104,7 @@ function AccountCard({ account, onRename }: { account: Account; onRename: () => 
             {account.first_operation && ` · ${formatDate(account.first_operation)} → ${formatDate(account.last_operation)}`}
           </span>
           {account.transaction_count > 0 && (
-            <Button variant="link" size="sm" className="px-0" render={<Link href={`/operations?account=${account.id}`} />}>
+            <Button variant="link" size="sm" className="px-0" nativeButton={false} render={<Link href={`/operations?account=${account.id}`} />}>
               Voir les opérations
             </Button>
           )}
@@ -148,25 +150,30 @@ function BalanceSparkline({ accountId }: { accountId: number }) {
 
 function RenameDialog({ account, onClose }: { account: Account | null; onClose: () => void }) {
   const invalidate = useInvalidateData();
+  const { spaces } = useSpace();
   const [label, setLabel] = useState("");
+  const [space, setSpace] = useState("");
   const [editedId, setEditedId] = useState<number | null>(null);
   if (account && editedId !== account.id) {
-    // Reset the field when a different account is opened (no effect needed).
+    // Reset the fields when a different account is opened (no effect needed).
     setEditedId(account.id);
     setLabel(account.label);
+    setSpace(String(account.space_id ?? ""));
   }
+  const moved = account !== null && space !== "" && Number(space) !== account.space_id;
 
   const save = useMutation({
-    mutationFn: (value: string) =>
+    mutationFn: () =>
       unwrap(
         api.PATCH("/api/accounts/{account_id}", {
           params: { path: { account_id: account!.id } },
-          body: { label: value },
+          body: { label, space_id: moved ? Number(space) : null },
         }),
       ),
     onSuccess: async () => {
       await invalidate();
-      toast.success("Compte renommé");
+      const target = spaces.find((s) => s.id === Number(space))?.name;
+      toast.success(moved ? `Compte déplacé vers ${target}` : "Compte enregistré");
       onClose();
     },
     onError: (e) => toast.error(e.message),
@@ -187,11 +194,11 @@ function RenameDialog({ account, onClose }: { account: Account | null; onClose: 
           className="grid gap-4"
           onSubmit={(e) => {
             e.preventDefault();
-            save.mutate(label);
+            save.mutate();
           }}
         >
           <DialogHeader>
-            <DialogTitle>Renommer le compte</DialogTitle>
+            <DialogTitle>Modifier le compte</DialogTitle>
             <DialogDescription>
               Nom lu sur les relevés : {account?.statement_label}. Laissez vide pour revenir à ce nom.
             </DialogDescription>
@@ -200,6 +207,22 @@ function RenameDialog({ account, onClose }: { account: Account | null; onClose: 
             <Label htmlFor="account-label">Nom affiché</Label>
             <Input id="account-label" value={label} onChange={(e) => setLabel(e.target.value)} autoFocus />
           </div>
+          {spaces.length > 1 && (
+            <div className="grid gap-2">
+              <Label htmlFor="account-space">Utilisateur</Label>
+              <NativeSelect id="account-space" value={space} onChange={(e) => setSpace(e.target.value)}>
+                {spaces.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </NativeSelect>
+              <p className="text-xs text-muted-foreground">
+                Titulaire lu sur les relevés : {account?.owner ?? "inconnu"}. Les opérations et relevés du compte le
+                suivent.
+              </p>
+            </div>
+          )}
           <DialogFooter>
             <Button type="submit" disabled={save.isPending}>
               Enregistrer

@@ -25,6 +25,7 @@ export const BANK_LABELS: Record<string, string> = {
   CA: "Crédit Agricole",
   CM: "Crédit Mutuel",
   BOURSO: "Boursorama",
+  LCL: "LCL",
 };
 
 export const formatBytes = (bytes: number) =>

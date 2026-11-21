@@ -26,6 +26,10 @@ def get_engine() -> Engine:
             cursor.close()
 
         SQLModel.metadata.create_all(_engine)
+        add_missing_columns(_engine)
+        from bankparse_api.spaces import migrate  # after the columns exist
+
+        migrate(_engine)
     return _engine
 
 
@@ -40,3 +44,22 @@ def reset_engine() -> None:
 def get_session() -> Iterator[Session]:
     with Session(get_engine()) as session:
         yield session
+
+
+def add_missing_columns(engine: Engine) -> None:
+    """Minimal schema upgrade for SQLite: ``create_all`` creates new tables but never adds a column to an
+    existing one. Nullable columns added to a model are added here; anything else needs a real migration."""
+    with engine.begin() as conn:
+        for table in SQLModel.metadata.sorted_tables:
+            existing = {row[1] for row in conn.exec_driver_sql(f'PRAGMA table_info("{table.name}")')}
+            if not existing:
+                continue
+            for column in table.columns:
+                if column.name in existing:
+                    continue
+                if not column.nullable:
+                    raise RuntimeError(
+                        f"Column {table.name}.{column.name} is NOT NULL and missing: a migration is required."
+                    )
+                ddl = column.type.compile(dialect=engine.dialect)
+                conn.exec_driver_sql(f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" {ddl}')

@@ -7,6 +7,11 @@ services:
       dockerfile: apps/api/Dockerfile
     volumes:
       - ./data:/data
+    environment:
+      # Local LLM (Ollama) running on this PC, used to categorize operations.
+      BANKPARSE_OLLAMA_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "127.0.0.1:8000:8000"
     restart: unless-stopped

@@ -4,17 +4,21 @@ from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
 import pandas as pd
-from fastapi import Depends, FastAPI, File, HTTPException, Query, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import Response
 from sqlalchemy import func
 from sqlmodel import Session, col, select
 
+from bankparse_api.categorize import runner as categorize_runner
+from bankparse_api.categorize.routes import router as categorize_router
+from bankparse_api.categorize.service import backfill_corrections, forget_llm_memory, seed_categories
 from bankparse_api.config import get_settings
 from bankparse_api.db import get_engine, get_session
 from bankparse_api.ingest import ImportResult, import_pdf, process, remove_file_data
-from bankparse_api.models import Account, Balance, StatementFile, Transaction, TransactionSource
+from bankparse_api.models import Account, Balance, Space, StatementFile, Transaction, TransactionSource
 from bankparse_api.queries import (
     SortField,
+    SpaceId,
     TransactionFilters,
     account_label,
     filtered_query,
@@ -28,15 +32,23 @@ from bankparse_api.schemas import (
     FileOut,
     ImportResultOut,
     MonthTotal,
+    SpaceOut,
+    SpaceUpdate,
     Summary,
     TransactionOut,
     TransactionPage,
 )
+from bankparse_api.spaces import SpaceError, create_space, move_account
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     get_engine()  # create the data folder and the tables
+    with Session(get_engine()) as session:
+        seed_categories(session)
+        backfill_corrections(session)
+        forget_llm_memory(session)
+    categorize_runner.mark_interrupted_jobs()
     yield
 
 
@@ -47,6 +59,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.include_router(categorize_router)
+
 SessionDep = Annotated[Session, Depends(get_session)]
 FiltersDep = Annotated[TransactionFilters, Depends(transaction_filters)]
 
@@ -56,10 +70,76 @@ def health() -> dict:
     return {"status": "ok"}
 
 
+# ---------------------------------------------------------------- spaces
+@app.get("/api/spaces", response_model=list[SpaceOut])
+def list_spaces(session: SessionDep) -> list[SpaceOut]:
+    """One space per user. Spaces detected from a holder and left without any account are not listed."""
+    accounts = dict(session.exec(select(Account.space_id, func.count()).group_by(Account.space_id)).all())
+    operations = dict(
+        session.exec(
+            select(Account.space_id, func.count())
+            .join(Transaction, col(Transaction.account_id) == col(Account.id))
+            .group_by(Account.space_id)
+        ).all()
+    )
+    return [
+        SpaceOut(id=sp.id, name=sp.name, account_count=accounts.get(sp.id, 0), transaction_count=operations.get(sp.id, 0))
+        for sp in session.exec(select(Space).order_by(Space.id)).all()
+        if accounts.get(sp.id) or sp.manual
+    ]
+
+
+@app.post("/api/spaces", response_model=SpaceOut, status_code=201)
+def add_space(body: SpaceUpdate, session: SessionDep) -> SpaceOut:
+    """Add a user by hand, then import their statements for them."""
+    try:
+        space = create_space(session, body.name)
+    except SpaceError as exc:
+        raise HTTPException(400, str(exc)) from None
+    session.commit()
+    return SpaceOut(id=space.id, name=space.name, account_count=0, transaction_count=0)
+
+
+@app.delete("/api/spaces/{space_id}", status_code=204)
+def delete_space(space_id: int, session: SessionDep) -> None:
+    """Remove a user who has no account (move or delete their statements first)."""
+    space = session.get(Space, space_id)
+    if space is None:
+        raise HTTPException(404, "Utilisateur introuvable")
+    if session.exec(select(Account.id).where(Account.space_id == space_id)).first() is not None:
+        raise HTTPException(400, "Cet utilisateur a encore des comptes : déplacez-les ou supprimez ses relevés d'abord.")
+    space.manual = False  # hidden; kept so its rules and corrections stay attached if the holder comes back
+    session.add(space)
+    session.commit()
+
+
+@app.patch("/api/spaces/{space_id}", response_model=SpaceOut)
+def rename_space(space_id: int, body: SpaceUpdate, session: SessionDep) -> SpaceOut:
+    space = session.get(Space, space_id)
+    if space is None:
+        raise HTTPException(404, "Utilisateur introuvable")
+    space.name = " ".join(body.name.split())
+    session.add(space)
+    session.commit()
+    return next(s for s in list_spaces(session) if s.id == space_id)
+
+
 # ---------------------------------------------------------------- uploads
 @app.post("/api/uploads", response_model=list[ImportResultOut])
-def upload(session: SessionDep, files: Annotated[list[UploadFile], File()]) -> list[dict]:
-    """Import one or several statement PDFs. Each file gets its own result, an error never aborts the batch."""
+def upload(
+    session: SessionDep,
+    files: Annotated[list[UploadFile], File()],
+    space_id: Annotated[int | None, Form()] = None,
+    fallback_space_id: Annotated[int | None, Form()] = None,
+) -> list[dict]:
+    """Import one or several statement PDFs. Each file gets its own result, an error never aborts the batch.
+
+    ``space_id`` (optional): the user these statements belong to, chosen in the app. Without it, the holder read
+    on each statement decides (a new holder gets a new user). ``fallback_space_id``: the user shown in the app,
+    for files whose holder cannot be known (unreadable or unsupported documents)."""
+    for sid in (space_id, fallback_space_id):
+        if sid is not None and session.get(Space, sid) is None:
+            raise HTTPException(404, "Utilisateur introuvable")
     max_bytes = get_settings().max_upload_mb * 1024 * 1024
     results = []
     for f in files:
@@ -70,7 +150,7 @@ def upload(session: SessionDep, files: Annotated[list[UploadFile], File()]) -> l
         elif not content.startswith(b"%PDF"):
             results.append(ImportResult(name, "rejected", error="Not a PDF file."))
         else:
-            results.append(import_pdf(session, name, content))
+            results.append(import_pdf(session, name, content, space_id, fallback_space_id))
     return [r.to_dict() for r in results]
 
 
@@ -80,14 +160,18 @@ def _file_out(record: StatementFile, count: int) -> FileOut:
 
 
 @app.get("/api/files", response_model=list[FileOut])
-def list_files(session: SessionDep) -> list[FileOut]:
+def list_files(session: SessionDep, space_id: SpaceId = None) -> list[FileOut]:
+    """Statement files of a user (every file belongs to exactly one)."""
     counts = dict(
         session.exec(
             select(TransactionSource.file_id, func.count()).group_by(TransactionSource.file_id)
         ).all()
     )
+    stmt = select(StatementFile)
+    if space_id is not None:
+        stmt = stmt.where(StatementFile.space_id == space_id)
     records = session.exec(
-        select(StatementFile).order_by(col(StatementFile.statement_date).desc(), col(StatementFile.id).desc())
+        stmt.order_by(col(StatementFile.statement_date).desc(), col(StatementFile.id).desc())
     ).all()
     return [_file_out(r, counts.get(r.id, 0)) for r in records]
 
@@ -126,7 +210,7 @@ def reparse_all(session: SessionDep) -> list[dict]:
 
 # ---------------------------------------------------------------- accounts
 @app.get("/api/accounts", response_model=list[AccountOut])
-def list_accounts(session: SessionDep) -> list[AccountOut]:
+def list_accounts(session: SessionDep, space_id: SpaceId = None) -> list[AccountOut]:
     stats = {
         row[0]: row[1:]
         for row in session.exec(
@@ -139,7 +223,8 @@ def list_accounts(session: SessionDep) -> list[AccountOut]:
         ).all()
     }
     out = []
-    for acc in session.exec(select(Account).order_by(Account.bank_code, Account.label)).all():
+    stmt = select(Account) if space_id is None else select(Account).where(Account.space_id == space_id)
+    for acc in session.exec(stmt.order_by(Account.bank_code, Account.label)).all():
         last = session.exec(
             select(Balance).where(Balance.account_id == acc.id).order_by(col(Balance.date).desc())
         ).first()
@@ -153,6 +238,7 @@ def list_accounts(session: SessionDep) -> list[AccountOut]:
                 label=account_label(acc),
                 statement_label=acc.label,
                 owner=acc.owner,
+                space_id=acc.space_id,
                 transaction_count=count,
                 first_operation=first_op,
                 last_operation=last_op,
@@ -168,7 +254,12 @@ def update_account(account_id: int, body: AccountUpdate, session: SessionDep) ->
     acc = session.get(Account, account_id)
     if acc is None:
         raise HTTPException(404, "Account not found")
-    acc.custom_label = (body.label or "").strip() or None
+    if "label" in body.model_fields_set:
+        acc.custom_label = (body.label or "").strip() or None
+    if body.space_id is not None and body.space_id != acc.space_id:
+        if session.get(Space, body.space_id) is None:
+            raise HTTPException(404, "Utilisateur introuvable")
+        move_account(session, acc, body.space_id)
     session.add(acc)
     session.commit()
     return next(a for a in list_accounts(session) if a.id == account_id)
@@ -192,6 +283,8 @@ def _tx_out(tx: Transaction, acc: Account) -> TransactionOut:
         label=tx.label,
         amount=tx.amount_cents / 100,
         category=tx.category,
+        category_source=tx.category_source,
+        category_model=tx.category_model,
     )
 
 
@@ -264,25 +357,41 @@ def _attachment(filename: str) -> dict:
 
 # ---------------------------------------------------------------- summary
 @app.get("/api/summary", response_model=Summary)
-def summary(session: SessionDep) -> Summary:
+def summary(session: SessionDep, space_id: SpaceId = None) -> Summary:
+    def in_space(stmt):
+        if space_id is None:
+            return stmt
+        return stmt.join(Account, col(Transaction.account_id) == col(Account.id)).where(Account.space_id == space_id)
+
     month = func.strftime("%Y-%m", Transaction.operation_date)
     months = session.exec(
-        select(
-            month,
-            func.coalesce(func.sum(Transaction.amount_cents).filter(Transaction.amount_cents > 0), 0),
-            func.coalesce(func.sum(Transaction.amount_cents).filter(Transaction.amount_cents < 0), 0),
+        in_space(
+            select(
+                month,
+                func.coalesce(func.sum(Transaction.amount_cents).filter(Transaction.amount_cents > 0), 0),
+                func.coalesce(func.sum(Transaction.amount_cents).filter(Transaction.amount_cents < 0), 0),
+            ).select_from(Transaction)
         )
         .group_by(month)
         .order_by(month)
     ).all()
     first_op, last_op, n_tx = session.exec(
-        select(func.min(Transaction.operation_date), func.max(Transaction.operation_date), func.count(Transaction.id))
+        in_space(
+            select(
+                func.min(Transaction.operation_date), func.max(Transaction.operation_date), func.count(Transaction.id)
+            ).select_from(Transaction)
+        )
     ).one()
+    accounts = select(func.count(Account.id))
+    files = select(func.count(StatementFile.id))
+    if space_id is not None:
+        accounts = accounts.where(Account.space_id == space_id)
+        files = files.where(StatementFile.space_id == space_id)
     return Summary(
-        accounts=session.exec(select(func.count(Account.id))).one(),
+        accounts=session.exec(accounts).one(),
         transactions=n_tx,
-        files=session.exec(select(func.count(StatementFile.id)).where(StatementFile.status == "parsed")).one(),
-        files_total=session.exec(select(func.count(StatementFile.id))).one(),
+        files=session.exec(files.where(StatementFile.status == "parsed")).one(),
+        files_total=session.exec(files).one(),
         first_operation=first_op,
         last_operation=last_op,
         months=[MonthTotal(month=m, credit=c / 100, debit=d / 100) for m, c, d in months],

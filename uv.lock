@@ -79,6 +79,7 @@ source = { editable = "apps/api" }
 dependencies = [
     { name = "bankparse" },
     { name = "fastapi", extra = ["standard"] },
+    { name = "httpx" },
     { name = "openpyxl" },
     { name = "sqlmodel" },
 ]
@@ -87,6 +88,7 @@ dependencies = [
 requires-dist = [
     { name = "bankparse", editable = "packages/bankparse" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.162.4" },
+    { name = "httpx", specifier = ">=0.28" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "sqlmodel", specifier = ">=0.0.49" },
 ]

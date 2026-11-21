@@ -1,6 +1,6 @@
 "use client";
 
-import { FileStack, Landmark, LayoutDashboard, ListOrdered, Upload } from "lucide-react";
+import { FileStack, Landmark, LayoutDashboard, ListOrdered, Tags, Upload } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -10,6 +10,7 @@ const LINKS = [
   { href: "/", label: "Vue d'ensemble", icon: LayoutDashboard },
   { href: "/import", label: "Importer", icon: Upload },
   { href: "/operations", label: "Opérations", icon: ListOrdered },
+  { href: "/categories", label: "Catégories", icon: Tags },
   { href: "/comptes", label: "Comptes", icon: Landmark },
   { href: "/fichiers", label: "Fichiers", icon: FileStack },
 ];

@@ -6,6 +6,840 @@
   "version": "0.1.0"
  },
  "paths": {
+  "/api/categories": {
+   "get": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "List Categories",
+    "description": "Categories are shared by every space; the operation counts are those of ``space_id``.",
+    "operationId": "list_categories_api_categories_get",
+    "parameters": [
+     {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/CategoryOut"
+         },
+         "title": "Response List Categories Api Categories Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Create Category",
+    "operationId": "create_category_api_categories_post",
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CategoryIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategoryOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/categories/{category_id}": {
+   "patch": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Update Category",
+    "description": "Rename and/or describe a category (the description is given to the LLM).",
+    "operationId": "update_category_api_categories__category_id__patch",
+    "parameters": [
+     {
+      "name": "category_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Category Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CategoryPatch"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategoryOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "delete": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Delete Category",
+    "operationId": "delete_category_api_categories__category_id__delete",
+    "parameters": [
+     {
+      "name": "category_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Category Id"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/transactions/{transaction_id}/category": {
+   "patch": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Set Transaction Category",
+    "operationId": "set_transaction_category_api_transactions__transaction_id__category_patch",
+    "parameters": [
+     {
+      "name": "transaction_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Transaction Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CategoryUpdate"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategoryUpdateResult"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/transactions/{transaction_id}/similar": {
+   "get": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Similar Transactions",
+    "description": "Operations with a similar label (shown before applying a correction to them too).",
+    "operationId": "similar_transactions_api_transactions__transaction_id__similar_get",
+    "parameters": [
+     {
+      "name": "transaction_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Transaction Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SimilarOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/transactions/{transaction_id}/validation": {
+   "post": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Validate Transaction",
+    "description": "Validate (or un-validate) the category the LLM proposed for one operation.",
+    "operationId": "validate_transaction_api_transactions__transaction_id__validation_post",
+    "parameters": [
+     {
+      "name": "transaction_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Transaction Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ValidationIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategoryUpdateResult"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/transactions/validation": {
+   "post": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Validate Filtered",
+    "description": "Validate every LLM proposal matching the same filters as the operations list.",
+    "operationId": "validate_filtered_api_transactions_validation_post",
+    "parameters": [
+     {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     },
+     {
+      "name": "account_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "array",
+         "items": {
+          "type": "integer"
+         }
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Account Id"
+      }
+     },
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "q",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 200
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Q"
+      }
+     },
+     {
+      "name": "min_amount",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Min Amount"
+      }
+     },
+     {
+      "name": "max_amount",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "number"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Max Amount"
+      }
+     },
+     {
+      "name": "direction",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "debit",
+          "credit"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Direction"
+      }
+     },
+     {
+      "name": "category",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Category"
+      }
+     },
+     {
+      "name": "uncategorized",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "Uncategorized"
+      }
+     },
+     {
+      "name": "to_review",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "To Review"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategoryUpdateResult"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/categorize/status": {
+   "get": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Categorize Status",
+    "operationId": "categorize_status_api_categorize_status_get",
+    "parameters": [
+     {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategorizeStatus"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/categorize/count": {
+   "get": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Categorize Count",
+    "description": "How many operations a run with these options would process.",
+    "operationId": "categorize_count_api_categorize_count_get",
+    "parameters": [
+     {
+      "name": "mode",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "new",
+        "all"
+       ],
+       "type": "string",
+       "default": "new",
+       "title": "Mode"
+      }
+     },
+     {
+      "name": "date_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date From"
+      }
+     },
+     {
+      "name": "date_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Date To"
+      }
+     },
+     {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategorizeCount"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/categorize": {
+   "post": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Start Categorization",
+    "operationId": "start_categorization_api_categorize_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CategorizeStart"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "202": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CategorizationJobOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/categorize/jobs/latest": {
+   "get": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Latest Job",
+    "operationId": "latest_job_api_categorize_jobs_latest_get",
+    "parameters": [
+     {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "anyOf": [
+          {
+           "$ref": "#/components/schemas/CategorizationJobOut"
+          },
+          {
+           "type": "null"
+          }
+         ],
+         "title": "Response Latest Job Api Categorize Jobs Latest Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/categorize/jobs/{job_id}/cancel": {
+   "post": {
+    "tags": [
+     "categorization"
+    ],
+    "summary": "Cancel Job",
+    "operationId": "cancel_job_api_categorize_jobs__job_id__cancel_post",
+    "parameters": [
+     {
+      "name": "job_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Job Id"
+      }
+     }
+    ],
+    "responses": {
+     "202": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": true,
+         "title": "Response Cancel Job Api Categorize Jobs  Job Id  Cancel Post"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/health": {
    "get": {
     "summary": "Health",
@@ -26,10 +860,150 @@
     }
    }
   },
+  "/api/spaces": {
+   "get": {
+    "summary": "List Spaces",
+    "description": "One space per user. Spaces detected from a holder and left without any account are not listed.",
+    "operationId": "list_spaces_api_spaces_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/SpaceOut"
+         },
+         "type": "array",
+         "title": "Response List Spaces Api Spaces Get"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "summary": "Add Space",
+    "description": "Add a user by hand, then import their statements for them.",
+    "operationId": "add_space_api_spaces_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SpaceUpdate"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "201": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SpaceOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/spaces/{space_id}": {
+   "delete": {
+    "summary": "Delete Space",
+    "description": "Remove a user who has no account (move or delete their statements first).",
+    "operationId": "delete_space_api_spaces__space_id__delete",
+    "parameters": [
+     {
+      "name": "space_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Space Id"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "patch": {
+    "summary": "Rename Space",
+    "operationId": "rename_space_api_spaces__space_id__patch",
+    "parameters": [
+     {
+      "name": "space_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Space Id"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SpaceUpdate"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SpaceOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/uploads": {
    "post": {
     "summary": "Upload",
-    "description": "Import one or several statement PDFs. Each file gets its own result, an error never aborts the batch.",
+    "description": "Import one or several statement PDFs. Each file gets its own result, an error never aborts the batch.\n\n``space_id`` (optional): the user these statements belong to, chosen in the app. Without it, the holder read\non each statement decides (a new holder gets a new user).",
     "operationId": "upload_api_uploads_post",
     "requestBody": {
      "content": {
@@ -72,18 +1046,49 @@
   "/api/files": {
    "get": {
     "summary": "List Files",
+    "description": "Files of a space, plus the unreadable ones (no holder known), shown in every space.",
     "operationId": "list_files_api_files_get",
+    "parameters": [
+     {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     }
+    ],
     "responses": {
      "200": {
       "description": "Successful Response",
       "content": {
        "application/json": {
         "schema": {
+         "type": "array",
          "items": {
           "$ref": "#/components/schemas/FileOut"
          },
-         "type": "array",
          "title": "Response List Files Api Files Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
         }
        }
       }
@@ -189,17 +1194,47 @@
    "get": {
     "summary": "List Accounts",
     "operationId": "list_accounts_api_accounts_get",
+    "parameters": [
+     {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     }
+    ],
     "responses": {
      "200": {
       "description": "Successful Response",
       "content": {
        "application/json": {
         "schema": {
+         "type": "array",
          "items": {
           "$ref": "#/components/schemas/AccountOut"
          },
-         "type": "array",
          "title": "Response List Accounts Api Accounts Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
         }
        }
       }
@@ -359,6 +1394,24 @@
       }
      },
      {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     },
+     {
       "name": "account_id",
       "in": "query",
       "required": false,
@@ -494,6 +1547,26 @@
         }
        ],
        "title": "Category"
+      }
+     },
+     {
+      "name": "uncategorized",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "Uncategorized"
+      }
+     },
+     {
+      "name": "to_review",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "To Review"
       }
      }
     ],
@@ -573,6 +1646,24 @@
       }
      },
      {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     },
+     {
       "name": "account_id",
       "in": "query",
       "required": false,
@@ -709,6 +1800,26 @@
        ],
        "title": "Category"
       }
+     },
+     {
+      "name": "uncategorized",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "Uncategorized"
+      }
+     },
+     {
+      "name": "to_review",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "boolean",
+       "default": false,
+       "title": "To Review"
+      }
      }
     ],
     "responses": {
@@ -737,6 +1848,26 @@
    "get": {
     "summary": "Summary",
     "operationId": "summary_api_summary_get",
+    "parameters": [
+     {
+      "name": "space_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Space (one per account holder); omitted: every space",
+       "title": "Space Id"
+      },
+      "description": "Space (one per account holder); omitted: every space"
+     }
+    ],
     "responses": {
      "200": {
       "description": "Successful Response",
@@ -744,6 +1875,16 @@
        "application/json": {
         "schema": {
          "$ref": "#/components/schemas/Summary"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
         }
        }
       }
@@ -790,6 +1931,17 @@
        }
       ],
       "title": "Owner"
+     },
+     "space_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Space Id"
      },
      "transaction_count": {
       "type": "integer",
@@ -852,6 +2004,7 @@
      "label",
      "statement_label",
      "owner",
+     "space_id",
      "transaction_count",
      "first_operation",
      "last_operation",
@@ -872,6 +2025,17 @@
        }
       ],
       "title": "Label"
+     },
+     "space_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Space Id"
      }
     },
     "type": "object",
@@ -905,6 +2069,17 @@
       },
       "type": "array",
       "title": "Files"
+     },
+     "space_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Space Id"
      }
     },
     "type": "object",
@@ -912,6 +2087,447 @@
      "files"
     ],
     "title": "Body_upload_api_uploads_post"
+   },
+   "CategorizationJobOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "running",
+       "done",
+       "failed",
+       "cancelled"
+      ],
+      "title": "Status"
+     },
+     "mode": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Mode"
+     },
+     "model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Model"
+     },
+     "batch_size": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Batch Size"
+     },
+     "date_from": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date From"
+     },
+     "date_to": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date To"
+     },
+     "total": {
+      "type": "integer",
+      "title": "Total"
+     },
+     "done": {
+      "type": "integer",
+      "title": "Done"
+     },
+     "merchants_total": {
+      "type": "integer",
+      "title": "Merchants Total"
+     },
+     "merchants_done": {
+      "type": "integer",
+      "title": "Merchants Done"
+     },
+     "space_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Space Id"
+     },
+     "message": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Message"
+     },
+     "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "title": "Started At"
+     },
+     "finished_at": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date-time"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Finished At"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "status",
+     "mode",
+     "model",
+     "batch_size",
+     "date_from",
+     "date_to",
+     "total",
+     "done",
+     "merchants_total",
+     "merchants_done",
+     "space_id",
+     "message",
+     "started_at",
+     "finished_at"
+    ],
+    "title": "CategorizationJobOut"
+   },
+   "CategorizeCount": {
+    "properties": {
+     "count": {
+      "type": "integer",
+      "title": "Count"
+     }
+    },
+    "type": "object",
+    "required": [
+     "count"
+    ],
+    "title": "CategorizeCount"
+   },
+   "CategorizeStart": {
+    "properties": {
+     "model": {
+      "type": "string",
+      "title": "Model"
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "new",
+       "all"
+      ],
+      "title": "Mode",
+      "default": "new"
+     },
+     "date_from": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date From"
+     },
+     "date_to": {
+      "anyOf": [
+       {
+        "type": "string",
+        "format": "date"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date To"
+     },
+     "batch_size": {
+      "type": "integer",
+      "maximum": 20.0,
+      "minimum": 1.0,
+      "title": "Batch Size",
+      "default": 1
+     },
+     "space_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Space Id"
+     }
+    },
+    "type": "object",
+    "required": [
+     "model"
+    ],
+    "title": "CategorizeStart"
+   },
+   "CategorizeStatus": {
+    "properties": {
+     "ollama_ok": {
+      "type": "boolean",
+      "title": "Ollama Ok"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     },
+     "models": {
+      "items": {
+       "$ref": "#/components/schemas/InstalledModelOut"
+      },
+      "type": "array",
+      "title": "Models"
+     },
+     "default_model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Default Model"
+     },
+     "fast_model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fast Model"
+     },
+     "missing_models": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Missing Models"
+     },
+     "default_batch_size": {
+      "type": "integer",
+      "title": "Default Batch Size"
+     },
+     "never_categorized": {
+      "type": "boolean",
+      "title": "Never Categorized"
+     },
+     "uncategorized": {
+      "type": "integer",
+      "title": "Uncategorized"
+     },
+     "unknown": {
+      "type": "integer",
+      "title": "Unknown"
+     },
+     "to_review": {
+      "type": "integer",
+      "title": "To Review"
+     }
+    },
+    "type": "object",
+    "required": [
+     "ollama_ok",
+     "reason",
+     "models",
+     "default_model",
+     "fast_model",
+     "missing_models",
+     "default_batch_size",
+     "never_categorized",
+     "uncategorized",
+     "unknown",
+     "to_review"
+    ],
+    "title": "CategorizeStatus"
+   },
+   "CategoryIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "title": "Name"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "CategoryIn"
+   },
+   "CategoryOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     },
+     "is_system": {
+      "type": "boolean",
+      "title": "Is System"
+     },
+     "transaction_count": {
+      "type": "integer",
+      "title": "Transaction Count"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "description",
+     "is_system",
+     "transaction_count"
+    ],
+    "title": "CategoryOut"
+   },
+   "CategoryPatch": {
+    "properties": {
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "description": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Description"
+     }
+    },
+    "type": "object",
+    "title": "CategoryPatch"
+   },
+   "CategoryUpdate": {
+    "properties": {
+     "category": {
+      "type": "string",
+      "title": "Category"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 300
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     },
+     "apply_to_similar": {
+      "type": "boolean",
+      "title": "Apply To Similar",
+      "default": false
+     }
+    },
+    "type": "object",
+    "required": [
+     "category"
+    ],
+    "title": "CategoryUpdate"
+   },
+   "CategoryUpdateResult": {
+    "properties": {
+     "updated": {
+      "type": "integer",
+      "title": "Updated"
+     }
+    },
+    "type": "object",
+    "required": [
+     "updated"
+    ],
+    "title": "CategoryUpdateResult"
    },
    "FileOut": {
     "properties": {
@@ -1112,6 +2728,33 @@
       "type": "array",
       "title": "Warnings",
       "default": []
+     },
+     "space_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Space Id"
+     },
+     "space_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Space Name"
+     },
+     "space_created": {
+      "type": "boolean",
+      "title": "Space Created",
+      "default": false
      }
     },
     "type": "object",
@@ -1120,6 +2763,24 @@
      "status"
     ],
     "title": "ImportResultOut"
+   },
+   "InstalledModelOut": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "size_gb": {
+      "type": "number",
+      "title": "Size Gb"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "size_gb"
+    ],
+    "title": "InstalledModelOut"
    },
    "MonthTotal": {
     "properties": {
@@ -1143,6 +2804,70 @@
      "debit"
     ],
     "title": "MonthTotal"
+   },
+   "SimilarOut": {
+    "properties": {
+     "count": {
+      "type": "integer",
+      "title": "Count"
+     },
+     "examples": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Examples"
+     }
+    },
+    "type": "object",
+    "required": [
+     "count",
+     "examples"
+    ],
+    "title": "SimilarOut"
+   },
+   "SpaceOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "account_count": {
+      "type": "integer",
+      "title": "Account Count"
+     },
+     "transaction_count": {
+      "type": "integer",
+      "title": "Transaction Count"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "account_count",
+     "transaction_count"
+    ],
+    "title": "SpaceOut"
+   },
+   "SpaceUpdate": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Name"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name"
+    ],
+    "title": "SpaceUpdate"
    },
    "Summary": {
     "properties": {
@@ -1259,6 +2984,28 @@
        }
       ],
       "title": "Category"
+     },
+     "category_source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Category Source"
+     },
+     "category_model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Category Model"
      }
     },
     "type": "object",
@@ -1271,7 +3018,9 @@
      "value_date",
      "label",
      "amount",
-     "category"
+     "category",
+     "category_source",
+     "category_model"
     ],
     "title": "TransactionOut"
    },
@@ -1355,6 +3104,17 @@
      "type"
     ],
     "title": "ValidationError"
+   },
+   "ValidationIn": {
+    "properties": {
+     "validated": {
+      "type": "boolean",
+      "title": "Validated",
+      "default": true
+     }
+    },
+    "type": "object",
+    "title": "ValidationIn"
    }
   }
  }

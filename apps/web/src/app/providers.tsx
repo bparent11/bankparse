@@ -6,6 +6,7 @@ import { useState } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SpaceProvider } from "@/lib/space";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -17,7 +18,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>{children}</TooltipProvider>
+        <SpaceProvider>
+          <TooltipProvider>{children}</TooltipProvider>
+        </SpaceProvider>
         <Toaster richColors position="bottom-right" />
       </QueryClientProvider>
     </ThemeProvider>

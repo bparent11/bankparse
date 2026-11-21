@@ -49,7 +49,7 @@ export function OverviewView() {
         <PageHeader title="Bienvenue 👋" description="Vos relevés bancaires, enfin lisibles." />
         <EmptyState icon={FileUp} title="Aucune opération pour le moment">
           <p>Importez vos relevés PDF (Crédit Agricole, Crédit Mutuel, Boursorama) pour retrouver toutes vos opérations ici.</p>
-          <Button className="mt-4" render={<Link href="/import" />}>
+          <Button className="mt-4" nativeButton={false} render={<Link href="/import" />}>
             <Upload /> Importer des relevés
           </Button>
         </EmptyState>
@@ -66,7 +66,7 @@ export function OverviewView() {
         title="Vue d'ensemble"
         description={`Du ${formatDate(s.first_operation)} au ${formatDate(s.last_operation)}`}
         actions={
-          <Button size="sm" render={<Link href="/import" />}>
+          <Button size="sm" nativeButton={false} render={<Link href="/import" />}>
             <Upload /> Importer
           </Button>
         }

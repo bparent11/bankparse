@@ -13,8 +13,12 @@ from bankparse_api.models import Account, Transaction
 SortField = Literal["operation_date", "value_date", "amount", "label", "account"]
 
 
+SpaceId = Annotated[int | None, Query(description="Space (one per account holder); omitted: every space")]
+
+
 @dataclass
 class TransactionFilters:
+    space_id: int | None = None
     account_id: list[int] | None = None
     date_from: dt.date | None = None
     date_to: dt.date | None = None
@@ -23,9 +27,12 @@ class TransactionFilters:
     max_amount: float | None = None
     direction: Literal["debit", "credit"] | None = None
     category: str | None = None
+    uncategorized: bool = False
+    to_review: bool = False  # proposed by the LLM and not yet validated
 
 
 def transaction_filters(
+    space_id: SpaceId = None,
     account_id: Annotated[list[int] | None, Query()] = None,
     date_from: dt.date | None = None,
     date_to: dt.date | None = None,
@@ -34,13 +41,20 @@ def transaction_filters(
     max_amount: float | None = None,
     direction: Literal["debit", "credit"] | None = None,
     category: str | None = None,
+    uncategorized: bool = False,
+    to_review: bool = False,
 ) -> TransactionFilters:
-    return TransactionFilters(account_id, date_from, date_to, q, min_amount, max_amount, direction, category)
+    return TransactionFilters(
+        space_id,
+        account_id, date_from, date_to, q, min_amount, max_amount, direction, category, uncategorized, to_review
+    )
 
 
 def filtered_query(f: TransactionFilters):
     """SELECT Transaction, Account with every filter applied (no ordering, no paging)."""
     stmt = select(Transaction, Account).join(Account, col(Transaction.account_id) == col(Account.id))
+    if f.space_id is not None:
+        stmt = stmt.where(Account.space_id == f.space_id)
     if f.account_id:
         stmt = stmt.where(col(Transaction.account_id).in_(f.account_id))
     if f.date_from:
@@ -60,6 +74,10 @@ def filtered_query(f: TransactionFilters):
         stmt = stmt.where(Transaction.amount_cents > 0)
     if f.category:
         stmt = stmt.where(Transaction.category == f.category)
+    if f.uncategorized:
+        stmt = stmt.where(col(Transaction.category).is_(None))
+    if f.to_review:
+        stmt = stmt.where(col(Transaction.category_source).in_(("llm", "memory")))
     return stmt
 
 

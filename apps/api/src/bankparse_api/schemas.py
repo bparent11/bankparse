@@ -1,7 +1,7 @@
 import datetime as dt
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ImportResultOut(BaseModel):
@@ -16,6 +16,20 @@ class ImportResultOut(BaseModel):
     check_ok: bool | None = None
     error: str | None = None
     warnings: list[str] = []
+    space_id: int | None = None
+    space_name: str | None = None
+    space_created: bool = False
+
+
+class SpaceOut(BaseModel):
+    id: int
+    name: str
+    account_count: int
+    transaction_count: int
+
+
+class SpaceUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
 
 
 class AccountOut(BaseModel):
@@ -26,6 +40,7 @@ class AccountOut(BaseModel):
     label: str
     statement_label: str
     owner: str | None
+    space_id: int | None
     transaction_count: int
     first_operation: dt.date | None
     last_operation: dt.date | None
@@ -35,6 +50,7 @@ class AccountOut(BaseModel):
 
 class AccountUpdate(BaseModel):
     label: str | None = None  # None or "" resets to the label read on the statements
+    space_id: int | None = None  # move the account (and its operations) to another space
 
 
 class BalanceOut(BaseModel):
@@ -52,6 +68,8 @@ class TransactionOut(BaseModel):
     label: str
     amount: float
     category: str | None
+    category_source: str | None  # user | rule | llm ("memory" in older versions)
+    category_model: str | None  # model that chose the category
 
 
 class TransactionPage(BaseModel):

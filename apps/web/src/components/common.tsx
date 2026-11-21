@@ -43,6 +43,7 @@ const BANK_STYLES: Record<string, string> = {
   CA: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   CM: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
   BOURSO: "bg-pink-500/10 text-pink-700 dark:text-pink-300",
+  LCL: "bg-amber-500/10 text-amber-700 dark:text-amber-300",
 };
 
 export function BankBadge({ code }: { code?: string | null }) {

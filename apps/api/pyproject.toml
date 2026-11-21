@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "bankparse",
     "fastapi[standard]>=0.162.4",
+    "httpx>=0.28",
     "openpyxl>=3.1.5",
     "sqlmodel>=0.0.49",
 ]
