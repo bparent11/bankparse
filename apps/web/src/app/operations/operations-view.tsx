@@ -20,13 +20,13 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Amount, EmptyState, ErrorMessage, PageHeader } from "@/components/common";
-import { NativeSelect } from "@/components/native-select";
+import { MultiSelect, type MultiOption } from "@/components/multi-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api, toQueryString, unwrap, type Transaction, type TransactionQuery } from "@/lib/api";
-import { formatShortDate } from "@/lib/format";
+import { BANK_LABELS, formatShortDate } from "@/lib/format";
 import { useAccounts, useCategories, useInvalidateData, useTransactions } from "@/lib/queries";
 import { useSpace } from "@/lib/space";
 import { cn } from "@/lib/utils";
@@ -35,31 +35,47 @@ import { CategorizeCard } from "./categorize-card";
 import { CategoryDialog } from "./category-dialog";
 
 type Sort = NonNullable<TransactionQuery["sort"]>;
+/** Multiple-choice filters: null = everything (no filter), [] = nothing selected. */
+type Multi = string[] | null;
 type Filters = {
   q: string;
-  account: string;
-  direction: "" | "debit" | "credit";
+  accounts: Multi; // account ids
+  banks: Multi; // bank codes
+  categories: Multi; // category names, NONE = without category
+  sources: Multi; // who chose the category (see SOURCES)
+  directions: Multi; // "credit" | "debit"
   dateFrom: string;
   dateTo: string;
   min: string;
   max: string;
-  category: string; // "" = all, NONE = uncategorized, otherwise a category name
-  review: boolean; // only the categories proposed by the AI and not validated yet
 };
 
 const NONE = "__none__";
 
+const SOURCES: MultiOption[] = [
+  { value: "user", label: "Choisie par vous" },
+  { value: "rule", label: "Règle « similaires »" },
+  { value: "llm", label: "Proposée par l'IA (à vérifier)" },
+  { value: "validated", label: "Proposée par l'IA, validée" },
+  { value: "none", label: "Pas encore catégorisée" },
+];
+const DIRECTIONS: MultiOption[] = [
+  { value: "credit", label: "Crédits" },
+  { value: "debit", label: "Débits" },
+];
+
 const PAGE_SIZE = 50;
 const EMPTY: Filters = {
   q: "",
-  account: "",
-  direction: "",
+  accounts: null,
+  banks: null,
+  categories: null,
+  sources: null,
+  directions: null,
   dateFrom: "",
   dateTo: "",
   min: "",
   max: "",
-  category: "",
-  review: false,
 };
 
 function useDebounced<T>(value: T, delay = 300): T {
@@ -81,7 +97,7 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState<Filters>({
     ...EMPTY,
-    account: searchParams.get("account") ?? "",
+    accounts: searchParams.get("account") ? [searchParams.get("account")!] : null,
   });
   const [sort, setSort] = useState<Sort>("operation_date");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
@@ -91,24 +107,45 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
   const accounts = useAccounts();
   const categories = useCategories();
   const [editing, setEditing] = useState<Transaction | null>(null);
+  const d = debounced;
+  // A list with nothing ticked matches no operation: the query is not even sent.
+  const nothingSelected = [d.accounts, d.banks, d.categories, d.sources, d.directions].some((m) => m?.length === 0);
   const query: TransactionQuery = {
     space_id: spaceId,
-    q: debounced.q || undefined,
-    account_id: debounced.account ? [Number(debounced.account)] : undefined,
-    direction: debounced.direction || undefined,
-    date_from: debounced.dateFrom || undefined,
-    date_to: debounced.dateTo || undefined,
-    min_amount: debounced.min !== "" ? Number(debounced.min) : undefined,
-    max_amount: debounced.max !== "" ? Number(debounced.max) : undefined,
-    category: debounced.category && debounced.category !== NONE ? debounced.category : undefined,
-    uncategorized: debounced.category === NONE ? true : undefined,
-    to_review: debounced.review ? true : undefined,
+    q: d.q || undefined,
+    account_id: d.accounts?.map(Number),
+    bank_code: d.banks ?? undefined,
+    category: d.categories ?? undefined,
+    source: (d.sources as TransactionQuery["source"]) ?? undefined,
+    direction: d.directions?.length === 1 ? (d.directions[0] as "credit" | "debit") : undefined,
+    date_from: d.dateFrom || undefined,
+    date_to: d.dateTo || undefined,
+    min_amount: d.min !== "" ? Number(d.min) : undefined,
+    max_amount: d.max !== "" ? Number(d.max) : undefined,
     sort,
     order,
     page,
     page_size: PAGE_SIZE,
   };
-  const { data, error, isPending, isFetching } = useTransactions(query);
+  const transactions = useTransactions(query, !nothingSelected);
+  const { error, isFetching } = transactions;
+  const data = nothingSelected ? undefined : transactions.data;
+  const isPending = !nothingSelected && transactions.isPending;
+  const reviewOnly = filters.sources?.length === 1 && filters.sources[0] === "llm";
+
+  const accountOptions: MultiOption[] = (accounts.data ?? []).map((a) => ({
+    value: String(a.id),
+    label: a.label,
+    hint: a.bank_code,
+  }));
+  const bankOptions: MultiOption[] = [...new Set((accounts.data ?? []).map((a) => a.bank_code))].map((code) => ({
+    value: code,
+    label: BANK_LABELS[code] ?? code,
+  }));
+  const categoryOptions: MultiOption[] = [
+    { value: NONE, label: "Sans catégorie" },
+    ...(categories.data ?? []).map((c) => ({ value: c.name, label: c.name, hint: String(c.transaction_count) })),
+  ];
   const invalidate = useInvalidateData();
 
   const validate = useMutation({
@@ -208,40 +245,41 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
             className="pl-8"
           />
         </div>
-        <NativeSelect
-          aria-label="Compte"
-          value={filters.account}
-          onChange={(e) => setFilter("account", e.target.value)}
-        >
-          <option value="">Tous les comptes</option>
-          {accounts.data?.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.label} ({a.bank_code})
-            </option>
-          ))}
-        </NativeSelect>
-        <NativeSelect
-          aria-label="Sens"
-          value={filters.direction}
-          onChange={(e) => setFilter("direction", e.target.value as Filters["direction"])}
-        >
-          <option value="">Crédits et débits</option>
-          <option value="credit">Crédits uniquement</option>
-          <option value="debit">Débits uniquement</option>
-        </NativeSelect>
-        <NativeSelect
-          aria-label="Catégorie"
-          value={filters.category}
-          onChange={(e) => setFilter("category", e.target.value)}
-        >
-          <option value="">Toutes les catégories</option>
-          <option value={NONE}>Non catégorisé</option>
-          {categories.data?.map((c) => (
-            <option key={c.id} value={c.name}>
-              {c.name} ({c.transaction_count})
-            </option>
-          ))}
-        </NativeSelect>
+        <MultiSelect
+          label="comptes"
+          allLabel="Tous les comptes"
+          options={accountOptions}
+          value={filters.accounts}
+          onChange={(v) => setFilter("accounts", v)}
+        />
+        <MultiSelect
+          label="banques"
+          allLabel="Toutes les banques"
+          options={bankOptions}
+          value={filters.banks}
+          onChange={(v) => setFilter("banks", v)}
+        />
+        <MultiSelect
+          label="catégories"
+          allLabel="Toutes les catégories"
+          options={categoryOptions}
+          value={filters.categories}
+          onChange={(v) => setFilter("categories", v)}
+        />
+        <MultiSelect
+          label="statuts"
+          allLabel="Tous les statuts de catégorie"
+          options={SOURCES}
+          value={filters.sources}
+          onChange={(v) => setFilter("sources", v)}
+        />
+        <MultiSelect
+          label="sens"
+          allLabel="Crédits et débits"
+          options={DIRECTIONS}
+          value={filters.directions}
+          onChange={(v) => setFilter("directions", v)}
+        />
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           Du
           <Input type="date" value={filters.dateFrom} onChange={(e) => setFilter("dateFrom", e.target.value)} />
@@ -288,13 +326,13 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
           <input
             type="checkbox"
             className="size-4 accent-primary"
-            checked={filters.review}
-            onChange={(e) => setFilter("review", e.target.checked)}
+            checked={reviewOnly}
+            onChange={(e) => setFilter("sources", e.target.checked ? ["llm"] : null)}
           />
           À vérifier seulement{" "}
           <span className="text-muted-foreground">(proposées par l&apos;IA, pas encore validées)</span>
         </label>
-        {filters.review && data && data.total > 0 && (
+        {reviewOnly && data && data.total > 0 && (
           <Button
             size="sm"
             variant="outline"
@@ -310,9 +348,13 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
         )}
       </div>
 
-      {error ? (
+      {nothingSelected ? (
+        <EmptyState icon={ListOrdered} title="Rien n'est coché dans un des filtres">
+          Cochez au moins une valeur, ou cliquez sur « Tout » dans la liste.
+        </EmptyState>
+      ) : error ? (
         <ErrorMessage error={error} />
-      ) : isPending ? (
+      ) : isPending || !data ? (
         <Skeleton className="h-96 w-full" />
       ) : data.total === 0 ? (
         <EmptyState

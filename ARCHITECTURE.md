@@ -181,7 +181,8 @@ Several people can use the same app: each **user** (account holder) gets a **spa
 - **shadcn/ui uses the `base-nova` style**, built on Base UI rather than Radix: components take a `render` prop instead of `asChild`. `cn` comes from the `cn` package.
 - **Deliberate choices:**
   - No TanStack Table: it installed as v9 with a new API, and sorting and pagination are done on the server anyway.
-  - Native `<select>` elements (`components/native-select.tsx`) instead of the Base UI Select, for simplicity and accessibility.
+  - Native `<select>` elements (`components/native-select.tsx`) instead of the Base UI Select, for simplicity and accessibility, for single choices (forms, the user selector).
+  - **Every list filter is a multiple-choice drop-down** (`components/multi-select.tsx`, Base UI Popover + checkboxes): everything (`null`, no filter sent), several values, or everything but one ("Tout" then untick; "seulement" keeps one). With nothing ticked, no query is sent. Opérations: accounts, banks, categories (incl. "Sans catégorie" = `__none__`), category status (`source`: user, rule, llm, validated, none) and direction; the API ORs the values of one filter and ANDs the filters (`queries.filtered_query`). Fichiers: status and bank, filtered in the browser.
   - `useSearchParams` (the `?account=` deep link) is only used in `OperationsView`, wrapped in `<Suspense>` as Cache Components requires.
   - Uploads are sent **one file per request**, for per-file progress and so that one bad file doesn't block the others.
 - **UI:** French; dark mode follows the system (`next-themes`); credit and debit colors are the `--positive` / `--negative` tokens in `globals.css`.

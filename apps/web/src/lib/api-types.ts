@@ -287,7 +287,8 @@ export interface paths {
          * @description Import one or several statement PDFs. Each file gets its own result, an error never aborts the batch.
          *
          *     ``space_id`` (optional): the user these statements belong to, chosen in the app. Without it, the holder read
-         *     on each statement decides (a new holder gets a new user).
+         *     on each statement decides (a new holder gets a new user). ``fallback_space_id``: the user shown in the app,
+         *     for files whose holder cannot be known (unreadable or unsupported documents).
          */
         post: operations["upload_api_uploads_post"];
         delete?: never;
@@ -305,7 +306,7 @@ export interface paths {
         };
         /**
          * List Files
-         * @description Files of a space, plus the unreadable ones (no holder known), shown in every space.
+         * @description Statement files of a user (every file belongs to exactly one).
          */
         get: operations["list_files_api_files_get"];
         put?: never;
@@ -528,6 +529,8 @@ export interface components {
             files: string[];
             /** Space Id */
             space_id?: number | null;
+            /** Fallback Space Id */
+            fallback_space_id?: number | null;
         };
         /** CategorizationJobOut */
         CategorizationJobOut: {
@@ -1107,15 +1110,19 @@ export interface operations {
                 /** @description Space (one per account holder); omitted: every space */
                 space_id?: number | null;
                 account_id?: number[] | null;
+                bank_code?: string[] | null;
                 date_from?: string | null;
                 date_to?: string | null;
                 q?: string | null;
                 min_amount?: number | null;
                 max_amount?: number | null;
                 direction?: ("debit" | "credit") | null;
-                category?: string | null;
+                /** @description Category names; '__none__' for operations without one */
+                category?: string[] | null;
                 uncategorized?: boolean;
                 to_review?: boolean;
+                /** @description Who chose the category */
+                source?: ("user" | "rule" | "llm" | "validated" | "none")[] | null;
             };
             header?: never;
             path?: never;
@@ -1700,15 +1707,19 @@ export interface operations {
                 /** @description Space (one per account holder); omitted: every space */
                 space_id?: number | null;
                 account_id?: number[] | null;
+                bank_code?: string[] | null;
                 date_from?: string | null;
                 date_to?: string | null;
                 q?: string | null;
                 min_amount?: number | null;
                 max_amount?: number | null;
                 direction?: ("debit" | "credit") | null;
-                category?: string | null;
+                /** @description Category names; '__none__' for operations without one */
+                category?: string[] | null;
                 uncategorized?: boolean;
                 to_review?: boolean;
+                /** @description Who chose the category */
+                source?: ("user" | "rule" | "llm" | "validated" | "none")[] | null;
             };
             header?: never;
             path?: never;
@@ -1745,15 +1756,19 @@ export interface operations {
                 /** @description Space (one per account holder); omitted: every space */
                 space_id?: number | null;
                 account_id?: number[] | null;
+                bank_code?: string[] | null;
                 date_from?: string | null;
                 date_to?: string | null;
                 q?: string | null;
                 min_amount?: number | null;
                 max_amount?: number | null;
                 direction?: ("debit" | "credit") | null;
-                category?: string | null;
+                /** @description Category names; '__none__' for operations without one */
+                category?: string[] | null;
                 uncategorized?: boolean;
                 to_review?: boolean;
+                /** @description Who chose the category */
+                source?: ("user" | "rule" | "llm" | "validated" | "none")[] | null;
             };
             header?: never;
             path?: never;
