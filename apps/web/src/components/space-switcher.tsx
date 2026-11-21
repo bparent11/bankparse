@@ -33,7 +33,13 @@ export function SpaceSwitcher() {
   return (
     <div className="mb-2 md:mb-4">
       <p className="mb-1 hidden px-1 text-xs text-muted-foreground md:block">Utilisateur</p>
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
+        <span
+          aria-hidden
+          className="flex size-7 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-[11px] font-semibold text-sidebar-accent-foreground"
+        >
+          {initials(current.name)}
+        </span>
         <NativeSelect
           aria-label="Utilisateur affiché"
           className="min-w-0 flex-1"
@@ -47,7 +53,12 @@ export function SpaceSwitcher() {
           ))}
           <option value={NEW}>＋ Nouvel utilisateur…</option>
         </NativeSelect>
-        <Button variant="ghost" size="icon-sm" aria-label={`Modifier ${current.name}`} onClick={() => setDialog("edit")}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={`Modifier ${current.name}`}
+          onClick={() => setDialog("edit")}
+        >
           <Pencil />
         </Button>
       </div>
@@ -55,6 +66,15 @@ export function SpaceSwitcher() {
       {dialog === "new" && <NewUserDialog onClose={() => setDialog(null)} onCreated={(s) => setSpaceId(s.id)} />}
     </div>
   );
+}
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0]!.toUpperCase())
+    .join("");
 }
 
 /** Add a user by hand, before importing their statements (also used by the Import page). */
@@ -116,7 +136,12 @@ function EditUserDialog({ space, onClose }: { space: Space; onClose: () => void 
   const [value, setValue] = useState(space.name);
   const save = useMutation({
     mutationFn: () =>
-      unwrap(api.PATCH("/api/spaces/{space_id}", { params: { path: { space_id: space.id } }, body: { name: value } })),
+      unwrap(
+        api.PATCH("/api/spaces/{space_id}", {
+          params: { path: { space_id: space.id } },
+          body: { name: value },
+        }),
+      ),
     onSuccess: async () => {
       await invalidate();
       toast.success("Utilisateur renommé");
@@ -125,7 +150,12 @@ function EditUserDialog({ space, onClose }: { space: Space; onClose: () => void 
     onError: (e) => toast.error(e.message),
   });
   const remove = useMutation({
-    mutationFn: () => unwrap(api.DELETE("/api/spaces/{space_id}", { params: { path: { space_id: space.id } } })),
+    mutationFn: () =>
+      unwrap(
+        api.DELETE("/api/spaces/{space_id}", {
+          params: { path: { space_id: space.id } },
+        }),
+      ),
     onSuccess: async () => {
       await invalidate();
       toast.success(`Utilisateur « ${space.name} » retiré`);
@@ -148,7 +178,8 @@ function EditUserDialog({ space, onClose }: { space: Space; onClose: () => void 
             <DialogTitle>Modifier l&apos;utilisateur</DialogTitle>
             <DialogDescription>
               {space.account_count} compte{space.account_count > 1 ? "s" : ""} ·{" "}
-              {space.transaction_count.toLocaleString("fr-FR")} opération{space.transaction_count > 1 ? "s" : ""}
+              {space.transaction_count.toLocaleString("fr-FR")} opération
+              {space.transaction_count > 1 ? "s" : ""}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2">

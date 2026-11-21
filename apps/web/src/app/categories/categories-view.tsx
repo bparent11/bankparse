@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, unwrap, type Schemas } from "@/lib/api";
+import { categoryColor } from "@/lib/category-color";
 import { useCategories, useInvalidateData } from "@/lib/queries";
 
 type Category = Schemas["CategoryOut"];
@@ -83,11 +84,16 @@ export function CategoriesView() {
       ) : isPending ? (
         <Skeleton className="h-96 w-full max-w-2xl" />
       ) : (
-        <ul className="max-w-2xl divide-y rounded-xl border">
+        <ul className="max-w-2xl divide-y rounded-xl border bg-card shadow-xs">
           {data.map((c) => (
             <li key={c.id} className="flex items-start justify-between gap-3 px-4 py-2.5">
               <div className="min-w-0">
-                <p className="flex items-center gap-1.5 truncate font-medium">
+                <p className="flex items-center gap-2 truncate font-medium">
+                  <span
+                    aria-hidden
+                    className="category-dot size-2.5 shrink-0 rounded-full"
+                    style={{ "--c": categoryColor(c.name) } as React.CSSProperties}
+                  />
                   {c.name}
                   {c.is_system && <Lock className="size-3.5 text-muted-foreground" aria-label="catégorie protégée" />}
                 </p>

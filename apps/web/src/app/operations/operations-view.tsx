@@ -12,6 +12,7 @@ import {
   Download,
   ListOrdered,
   Search,
+  SlidersHorizontal,
   X,
 } from "lucide-react";
 import Link from "next/link";
@@ -19,13 +20,17 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { Amount, EmptyState, ErrorMessage, PageHeader } from "@/components/common";
-import { MultiSelect, type MultiOption } from "@/components/multi-select";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+
+import { Amount, EmptyState, ErrorMessage, PageHeader, Stat } from "@/components/common";
+import { MultiSelect, multiSummary, type MultiOption } from "@/components/multi-select";
+import { NativeSelect } from "@/components/native-select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { api, toQueryString, unwrap, type Transaction, type TransactionQuery } from "@/lib/api";
+import { categoryColor } from "@/lib/category-color";
 import { BANK_LABELS, formatShortDate } from "@/lib/format";
 import { useAccounts, useCategories, useInvalidateData, useTransactions } from "@/lib/queries";
 import { useSpace } from "@/lib/space";
@@ -63,6 +68,42 @@ const DIRECTIONS: MultiOption[] = [
   { value: "credit", label: "Crédits" },
   { value: "debit", label: "Débits" },
 ];
+
+const CUSTOM = "custom";
+const PERIODS = [
+  { value: "all", label: "Toute la période" },
+  { value: "month", label: "Ce mois-ci" },
+  { value: "last-month", label: "Le mois dernier" },
+  { value: "3m", label: "3 derniers mois" },
+  { value: "12m", label: "12 derniers mois" },
+  { value: "year", label: "Cette année" },
+  { value: "last-year", label: "L'année dernière" },
+];
+
+/** [from, to] as yyyy-mm-dd (local time) for a period preset; empty strings = no bound. */
+function periodRange(value: string): [string, string] {
+  const iso = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth();
+  switch (value) {
+    case "month":
+      return [iso(new Date(y, m, 1)), ""];
+    case "last-month":
+      return [iso(new Date(y, m - 1, 1)), iso(new Date(y, m, 0))];
+    case "3m":
+      return [iso(new Date(y, m - 2, 1)), ""];
+    case "12m":
+      return [iso(new Date(y, m - 11, 1)), ""];
+    case "year":
+      return [iso(new Date(y, 0, 1)), ""];
+    case "last-year":
+      return [iso(new Date(y - 1, 0, 1)), iso(new Date(y - 1, 11, 31))];
+    default:
+      return ["", ""];
+  }
+}
 
 const PAGE_SIZE = 50;
 const EMPTY: Filters = {
@@ -144,7 +185,11 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
   }));
   const categoryOptions: MultiOption[] = [
     { value: NONE, label: "Sans catégorie" },
-    ...(categories.data ?? []).map((c) => ({ value: c.name, label: c.name, hint: String(c.transaction_count) })),
+    ...(categories.data ?? []).map((c) => ({
+      value: c.name,
+      label: c.name,
+      hint: String(c.transaction_count),
+    })),
   ];
   const invalidate = useInvalidateData();
 
@@ -196,6 +241,63 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
   };
 
   const hasFilters = JSON.stringify(filters) !== JSON.stringify(EMPTY);
+  const clearAll = () => {
+    setFilters(EMPTY);
+    setPage(1);
+  };
+  const [panelOpen, setPanelOpen] = useState(false);
+  const period =
+    PERIODS.find((p) => {
+      const [from, to] = periodRange(p.value);
+      return from === filters.dateFrom && to === filters.dateTo;
+    })?.value ?? CUSTOM;
+
+  // One removable chip per active filter (the period has its own selector, unless dates were typed by hand).
+  const chips: {
+    key: string;
+    label: string;
+    value: string;
+    clear: () => void;
+  }[] = [];
+  const multiChip = (key: keyof Filters, label: string, options: MultiOption[], name: string, all: string) => {
+    const value = filters[key];
+    if (Array.isArray(value))
+      chips.push({
+        key,
+        label,
+        value: multiSummary(options, value, name, all),
+        clear: () => setFilter(key, null),
+      });
+  };
+  multiChip("accounts", "Comptes", accountOptions, "comptes", "Tous les comptes");
+  multiChip("banks", "Banques", bankOptions, "banques", "Toutes les banques");
+  multiChip("categories", "Catégories", categoryOptions, "catégories", "Toutes les catégories");
+  multiChip("sources", "Statut", SOURCES, "statuts", "Tous les statuts");
+  multiChip("directions", "Sens", DIRECTIONS, "sens", "Crédits et débits");
+  if (filters.min !== "" || filters.max !== "")
+    chips.push({
+      key: "amount",
+      label: "Montant",
+      value:
+        filters.min !== "" && filters.max !== ""
+          ? `${filters.min} € à ${filters.max} €`
+          : filters.min !== ""
+            ? `≥ ${filters.min} €`
+            : `≤ ${filters.max} €`,
+      clear: () => setFilters((f) => ({ ...f, min: "", max: "" })),
+    });
+  if (period === CUSTOM)
+    chips.push({
+      key: "dates",
+      label: "Dates",
+      value:
+        filters.dateFrom && filters.dateTo
+          ? `du ${formatShortDate(filters.dateFrom)} au ${formatShortDate(filters.dateTo)}`
+          : filters.dateFrom
+            ? `depuis le ${formatShortDate(filters.dateFrom)}`
+            : `jusqu'au ${formatShortDate(filters.dateTo)}`,
+      clear: () => setFilters((f) => ({ ...f, dateFrom: "", dateTo: "" })),
+    });
   const pages = data ? Math.max(1, Math.ceil(data.total / PAGE_SIZE)) : 1;
   const exportQs = toQueryString({
     ...query,
@@ -208,17 +310,7 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
     <>
       <PageHeader
         title="Opérations"
-        description={
-          data ? (
-            <>
-              {data.total.toLocaleString("fr-FR")} opération
-              {data.total > 1 ? "s" : ""} · crédits <Amount value={data.total_credit} /> · débits{" "}
-              <Amount value={data.total_debit} />
-            </>
-          ) : (
-            "Toutes vos opérations importées"
-          )
-        }
+        description={hasFilters ? "Opérations correspondant à vos filtres" : "Toutes vos opérations importées"}
         actions={(["csv", "xlsx", "json"] as const).map((format) => (
           <Button
             key={format}
@@ -232,94 +324,101 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
         ))}
       />
 
+      <div className="mb-4 grid gap-3 sm:grid-cols-3">
+        <Stat label="Opérations">
+          {data ? data.total.toLocaleString("fr-FR") : nothingSelected ? "0" : <Skeleton className="mt-1 h-5 w-16" />}
+        </Stat>
+        <Stat label="Entrées">
+          {data ? <Amount value={data.total_credit} /> : <Skeleton className="mt-1 h-5 w-24" />}
+        </Stat>
+        <Stat label="Sorties">
+          {data ? <Amount value={data.total_debit} /> : <Skeleton className="mt-1 h-5 w-24" />}
+        </Stat>
+      </div>
+
       <CategorizeCard />
 
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="relative sm:col-span-2">
+      <div className="mb-3 flex flex-wrap gap-2">
+        <div className="relative min-w-56 flex-1">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             aria-label="Rechercher dans les libellés"
             placeholder="Rechercher un libellé (ex : loyer, carte…)"
             value={filters.q}
             onChange={(e) => setFilter("q", e.target.value)}
-            className="pl-8"
+            className="bg-card pl-8"
           />
         </div>
-        <MultiSelect
-          label="comptes"
-          allLabel="Tous les comptes"
-          options={accountOptions}
-          value={filters.accounts}
-          onChange={(v) => setFilter("accounts", v)}
-        />
-        <MultiSelect
-          label="banques"
-          allLabel="Toutes les banques"
-          options={bankOptions}
-          value={filters.banks}
-          onChange={(v) => setFilter("banks", v)}
-        />
-        <MultiSelect
-          label="catégories"
-          allLabel="Toutes les catégories"
-          options={categoryOptions}
-          value={filters.categories}
-          onChange={(v) => setFilter("categories", v)}
-        />
-        <MultiSelect
-          label="statuts"
-          allLabel="Tous les statuts de catégorie"
-          options={SOURCES}
-          value={filters.sources}
-          onChange={(v) => setFilter("sources", v)}
-        />
-        <MultiSelect
-          label="sens"
-          allLabel="Crédits et débits"
-          options={DIRECTIONS}
-          value={filters.directions}
-          onChange={(v) => setFilter("directions", v)}
-        />
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          Du
-          <Input type="date" value={filters.dateFrom} onChange={(e) => setFilter("dateFrom", e.target.value)} />
-        </label>
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          au
-          <Input type="date" value={filters.dateTo} onChange={(e) => setFilter("dateTo", e.target.value)} />
-        </label>
-        <Input
-          type="number"
-          inputMode="decimal"
-          aria-label="Montant minimum"
-          placeholder="Montant min (€)"
-          value={filters.min}
-          onChange={(e) => setFilter("min", e.target.value)}
-        />
-        <div className="flex gap-2">
-          <Input
-            type="number"
-            inputMode="decimal"
-            aria-label="Montant maximum"
-            placeholder="Montant max (€)"
-            value={filters.max}
-            onChange={(e) => setFilter("max", e.target.value)}
-          />
-          {hasFilters && (
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Effacer les filtres"
-              onClick={() => {
-                setFilters(EMPTY);
-                setPage(1);
-              }}
+        <NativeSelect
+          aria-label="Période"
+          className="w-auto bg-card"
+          value={period}
+          onChange={(e) => {
+            const range = e.target.value === CUSTOM ? null : periodRange(e.target.value);
+            if (range)
+              setFilters((f) => ({
+                ...f,
+                dateFrom: range[0],
+                dateTo: range[1],
+              }));
+            else setPanelOpen(true);
+            setPage(1);
+          }}
+        >
+          {PERIODS.map((p) => (
+            <option key={p.value} value={p.value}>
+              {p.label}
+            </option>
+          ))}
+          <option value={CUSTOM}>{period === CUSTOM ? "Dates choisies" : "Choisir des dates…"}</option>
+        </NativeSelect>
+        <Button variant={chips.length ? "default" : "outline"} onClick={() => setPanelOpen(true)}>
+          <SlidersHorizontal /> Filtres
+          {chips.length > 0 && (
+            <span className="rounded-full bg-primary-foreground px-1.5 text-xs font-semibold text-primary">
+              {chips.length}
+            </span>
+          )}
+        </Button>
+      </div>
+
+      {(chips.length > 0 || hasFilters) && (
+        <div className="mb-3 flex flex-wrap items-center gap-1.5">
+          {chips.map((c) => (
+            <span
+              key={c.key}
+              className="inline-flex items-center gap-1 rounded-full bg-accent py-0.5 pr-1 pl-2.5 text-xs text-accent-foreground"
             >
-              <X />
-            </Button>
+              <span className="opacity-75">{c.label} :</span> {c.value}
+              <button
+                type="button"
+                aria-label={`Retirer le filtre ${c.label}`}
+                onClick={c.clear}
+                className="flex size-4 items-center justify-center rounded-full hover:bg-accent-foreground/15"
+              >
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+          {hasFilters && (
+            <button type="button" onClick={clearAll} className="text-xs text-primary underline underline-offset-4">
+              Tout effacer
+            </button>
           )}
         </div>
-      </div>
+      )}
+
+      <FilterPanel
+        open={panelOpen}
+        onOpenChange={setPanelOpen}
+        filters={filters}
+        setFilter={setFilter}
+        onClear={clearAll}
+        total={data?.total}
+        accountOptions={accountOptions}
+        bankOptions={bankOptions}
+        categoryOptions={categoryOptions}
+      />
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <label className="flex items-center gap-2 text-sm">
@@ -373,7 +472,7 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
         </EmptyState>
       ) : (
         <>
-          <div className={cn("rounded-xl border transition-opacity", isFetching && "opacity-60")}>
+          <div className={cn("rounded-xl border bg-card shadow-xs transition-opacity", isFetching && "opacity-60")}>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -450,6 +549,183 @@ function SpaceOperations({ spaceId }: { spaceId: number | undefined }) {
   );
 }
 
+/** Side panel holding every filter, grouped by question (where, what, how much, when). */
+function FilterPanel({
+  open,
+  onOpenChange,
+  filters,
+  setFilter,
+  onClear,
+  total,
+  accountOptions,
+  bankOptions,
+  categoryOptions,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  filters: Filters;
+  setFilter: <K extends keyof Filters>(key: K, value: Filters[K]) => void;
+  onClear: () => void;
+  total: number | undefined;
+  accountOptions: MultiOption[];
+  bankOptions: MultiOption[];
+  categoryOptions: MultiOption[];
+}) {
+  const direction =
+    filters.directions === null ? "all" : filters.directions.length === 1 ? filters.directions[0] : "none";
+  return (
+    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/20 supports-backdrop-filter:backdrop-blur-[2px] data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0" />
+        <DialogPrimitive.Popup className="fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l bg-popover text-sm text-popover-foreground shadow-2xl outline-none data-open:animate-in data-open:slide-in-from-right data-closed:animate-out data-closed:slide-out-to-right">
+          <div className="flex items-center justify-between border-b px-5 py-4">
+            <DialogPrimitive.Title className="text-base font-semibold">Filtres</DialogPrimitive.Title>
+            <DialogPrimitive.Close render={<Button variant="ghost" size="icon-sm" aria-label="Fermer les filtres" />}>
+              <X />
+            </DialogPrimitive.Close>
+          </div>
+          <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+            <PanelGroup title="Où">
+              <PanelField label="Comptes">
+                <MultiSelect
+                  label="comptes"
+                  allLabel="Tous les comptes"
+                  options={accountOptions}
+                  value={filters.accounts}
+                  onChange={(v) => setFilter("accounts", v)}
+                />
+              </PanelField>
+              <PanelField label="Banques">
+                <MultiSelect
+                  label="banques"
+                  allLabel="Toutes les banques"
+                  options={bankOptions}
+                  value={filters.banks}
+                  onChange={(v) => setFilter("banks", v)}
+                />
+              </PanelField>
+            </PanelGroup>
+            <PanelGroup title="Quoi">
+              <PanelField label="Catégories">
+                <MultiSelect
+                  label="catégories"
+                  allLabel="Toutes les catégories"
+                  options={categoryOptions}
+                  value={filters.categories}
+                  onChange={(v) => setFilter("categories", v)}
+                />
+              </PanelField>
+              <PanelField label="Statut de la catégorie">
+                <MultiSelect
+                  label="statuts"
+                  allLabel="Tous les statuts"
+                  options={SOURCES}
+                  value={filters.sources}
+                  onChange={(v) => setFilter("sources", v)}
+                />
+              </PanelField>
+            </PanelGroup>
+            <PanelGroup title="Combien">
+              <div role="radiogroup" aria-label="Sens" className="flex overflow-hidden rounded-lg border">
+                {[
+                  { value: "all", label: "Tout", set: null },
+                  { value: "credit", label: "Crédits", set: ["credit"] },
+                  { value: "debit", label: "Débits", set: ["debit"] },
+                ].map((o) => (
+                  <button
+                    key={o.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={direction === o.value}
+                    onClick={() => setFilter("directions", o.set)}
+                    className={cn(
+                      "flex-1 py-1.5 text-sm transition-colors hover:bg-muted",
+                      direction === o.value && "bg-accent font-medium text-accent-foreground hover:bg-accent",
+                    )}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <PanelField label="Montant min (€)">
+                  <Input
+                    aria-label="Montant minimum"
+                    type="number"
+                    inputMode="decimal"
+                    value={filters.min}
+                    onChange={(e) => setFilter("min", e.target.value)}
+                  />
+                </PanelField>
+                <PanelField label="Montant max (€)">
+                  <Input
+                    aria-label="Montant maximum"
+                    type="number"
+                    inputMode="decimal"
+                    value={filters.max}
+                    onChange={(e) => setFilter("max", e.target.value)}
+                  />
+                </PanelField>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Les débits sont négatifs : « max −100 » garde les dépenses de plus de 100 €.
+              </p>
+            </PanelGroup>
+            <PanelGroup title="Quand">
+              <div className="grid grid-cols-2 gap-2">
+                <PanelField label="Du">
+                  <Input
+                    type="date"
+                    aria-label="Date de début"
+                    value={filters.dateFrom}
+                    onChange={(e) => setFilter("dateFrom", e.target.value)}
+                  />
+                </PanelField>
+                <PanelField label="Au">
+                  <Input
+                    type="date"
+                    aria-label="Date de fin"
+                    value={filters.dateTo}
+                    onChange={(e) => setFilter("dateTo", e.target.value)}
+                  />
+                </PanelField>
+              </div>
+            </PanelGroup>
+          </div>
+          <div className="flex items-center justify-between gap-2 border-t px-5 py-4">
+            <button type="button" onClick={onClear} className="text-sm text-primary underline underline-offset-4">
+              Tout effacer
+            </button>
+            <DialogPrimitive.Close render={<Button />}>
+              {total === undefined
+                ? "Voir les opérations"
+                : `Voir ${total.toLocaleString("fr-FR")} opération${total > 1 ? "s" : ""}`}
+            </DialogPrimitive.Close>
+          </div>
+        </DialogPrimitive.Popup>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
+  );
+}
+
+function PanelGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="space-y-2.5">
+      <h3 className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+function PanelField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div role="group" aria-label={label} className="grid gap-1">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
+}
+
 const SOURCE_LABELS: Record<string, string> = {
   user: "choisie par vous",
   rule: "reprise d'une de vos corrections",
@@ -477,15 +753,24 @@ function CategoryButton({ tx, onClick, onValidate }: { tx: Transaction; onClick:
         title={
           tx.category ? `Catégorie ${source ? `(${source})` : ""} — cliquer pour modifier` : "Choisir une catégorie"
         }
+        style={
+          tx.category && tx.category !== "Inconnu"
+            ? ({ "--c": categoryColor(tx.category) } as React.CSSProperties)
+            : undefined
+        }
         className={cn(
-          "inline-flex max-w-40 items-center gap-1 truncate rounded-md border px-2 py-0.5 text-xs transition-colors hover:bg-muted",
-          !tx.category && "border-dashed text-muted-foreground",
+          "inline-flex max-w-44 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs transition-[filter] hover:brightness-95 dark:hover:brightness-125",
+          !tx.category && "border-dashed text-muted-foreground hover:bg-muted",
           tx.category === "Inconnu" && "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-          (tx.category_source === "user" || tx.category_source === "rule" || validated) &&
-            "border-foreground/30 font-medium",
+          tx.category && tx.category !== "Inconnu" && "category-chip",
+          (tx.category_source === "user" || tx.category_source === "rule" || validated) && "font-medium",
+          fromAi && "border-dashed",
         )}
       >
-        {tx.category ?? "À classer"}
+        {tx.category && tx.category !== "Inconnu" && (
+          <span aria-hidden className="category-dot size-1.5 shrink-0 rounded-full" />
+        )}
+        <span className="truncate">{tx.category ?? "À classer"}</span>
       </button>
       {(fromAi || validated) && (
         <button

@@ -155,7 +155,7 @@ export function OverviewView() {
 
 function Stat({ label, value, href, hint }: { label: string; value: string; href: string; hint?: string }) {
   return (
-    <Link href={href} className="rounded-xl border bg-card p-4 transition-colors hover:bg-muted/50">
+    <Link href={href} className="rounded-xl border bg-card p-4 shadow-xs transition-colors hover:border-primary/40 hover:bg-accent/40">
       <p className="text-sm text-muted-foreground">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
