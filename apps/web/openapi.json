@@ -382,6 +382,25 @@
       }
      },
      {
+      "name": "bank_code",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Bank Code"
+      }
+     },
+     {
       "name": "date_from",
       "in": "query",
       "required": false,
@@ -491,14 +510,19 @@
       "schema": {
        "anyOf": [
         {
-         "type": "string"
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
         },
         {
          "type": "null"
         }
        ],
+       "description": "Category names; '__none__' for operations without one",
        "title": "Category"
-      }
+      },
+      "description": "Category names; '__none__' for operations without one"
      },
      {
       "name": "uncategorized",
@@ -519,6 +543,34 @@
        "default": false,
        "title": "To Review"
       }
+     },
+     {
+      "name": "source",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "array",
+         "items": {
+          "enum": [
+           "user",
+           "rule",
+           "llm",
+           "validated",
+           "none"
+          ],
+          "type": "string"
+         }
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Who chose the category",
+       "title": "Source"
+      },
+      "description": "Who chose the category"
      }
     ],
     "responses": {
@@ -1003,7 +1055,7 @@
   "/api/uploads": {
    "post": {
     "summary": "Upload",
-    "description": "Import one or several statement PDFs. Each file gets its own result, an error never aborts the batch.\n\n``space_id`` (optional): the user these statements belong to, chosen in the app. Without it, the holder read\non each statement decides (a new holder gets a new user).",
+    "description": "Import one or several statement PDFs. Each file gets its own result, an error never aborts the batch.\n\n``space_id`` (optional): the user these statements belong to, chosen in the app. Without it, the holder read\non each statement decides (a new holder gets a new user). ``fallback_space_id``: the user shown in the app,\nfor files whose holder cannot be known (unreadable or unsupported documents).",
     "operationId": "upload_api_uploads_post",
     "requestBody": {
      "content": {
@@ -1046,7 +1098,7 @@
   "/api/files": {
    "get": {
     "summary": "List Files",
-    "description": "Files of a space, plus the unreadable ones (no holder known), shown in every space.",
+    "description": "Statement files of a user (every file belongs to exactly one).",
     "operationId": "list_files_api_files_get",
     "parameters": [
      {
@@ -1431,6 +1483,25 @@
       }
      },
      {
+      "name": "bank_code",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Bank Code"
+      }
+     },
+     {
       "name": "date_from",
       "in": "query",
       "required": false,
@@ -1540,14 +1611,19 @@
       "schema": {
        "anyOf": [
         {
-         "type": "string"
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
         },
         {
          "type": "null"
         }
        ],
+       "description": "Category names; '__none__' for operations without one",
        "title": "Category"
-      }
+      },
+      "description": "Category names; '__none__' for operations without one"
      },
      {
       "name": "uncategorized",
@@ -1568,6 +1644,34 @@
        "default": false,
        "title": "To Review"
       }
+     },
+     {
+      "name": "source",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "array",
+         "items": {
+          "enum": [
+           "user",
+           "rule",
+           "llm",
+           "validated",
+           "none"
+          ],
+          "type": "string"
+         }
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Who chose the category",
+       "title": "Source"
+      },
+      "description": "Who chose the category"
      }
     ],
     "responses": {
@@ -1683,6 +1787,25 @@
       }
      },
      {
+      "name": "bank_code",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Bank Code"
+      }
+     },
+     {
       "name": "date_from",
       "in": "query",
       "required": false,
@@ -1792,14 +1915,19 @@
       "schema": {
        "anyOf": [
         {
-         "type": "string"
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
         },
         {
          "type": "null"
         }
        ],
+       "description": "Category names; '__none__' for operations without one",
        "title": "Category"
-      }
+      },
+      "description": "Category names; '__none__' for operations without one"
      },
      {
       "name": "uncategorized",
@@ -1820,6 +1948,34 @@
        "default": false,
        "title": "To Review"
       }
+     },
+     {
+      "name": "source",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "array",
+         "items": {
+          "enum": [
+           "user",
+           "rule",
+           "llm",
+           "validated",
+           "none"
+          ],
+          "type": "string"
+         }
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "Who chose the category",
+       "title": "Source"
+      },
+      "description": "Who chose the category"
      }
     ],
     "responses": {
@@ -2080,6 +2236,17 @@
        }
       ],
       "title": "Space Id"
+     },
+     "fallback_space_id": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fallback Space Id"
      }
     },
     "type": "object",

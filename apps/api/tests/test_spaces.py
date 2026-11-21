@@ -274,3 +274,25 @@ def test_cli_import_for_a_user(client, statements, tmp_path, capsys):
     out = capsys.readouterr().out
     assert "New user: Marie Dupont" in out and "-> Marie Dupont" in out
     assert set(spaces(client)) == {"Marie Dupont"}
+
+
+def test_multi_value_filters(client, statements):
+    """Uses this module's three accounts (CM 111, CA 222, CM 333), one operation each."""
+    upload(client, b"%PDF-ben-cm", b"%PDF-ben-ca", b"%PDF-marie")
+    ops = {t["account_id"]: t for t in client.get("/api/transactions").json()["items"]}
+    accounts = {a["account_number"]: a["id"] for a in client.get("/api/accounts").json()}
+    a111, a222, a333 = accounts["111"], accounts["222"], accounts["333"]
+    client.patch(f"/api/transactions/{ops[a111]['id']}/category", json={"category": "Alimentation"})
+    client.patch(f"/api/transactions/{ops[a222]['id']}/category", json={"category": "Logement"})
+
+    def total(**params) -> int:
+        return client.get("/api/transactions", params=params).json()["total"]
+
+    assert total(account_id=[a111, a222]) == 2  # several
+    assert total(account_id=[a222, a333]) == 2  # everything but one
+    assert total(bank_code=["CM"]) == 2 and total(bank_code=["CA", "CM"]) == 3
+    assert total(category=["Alimentation", "Logement"]) == 2
+    assert total(category=["Logement", "__none__"]) == 2  # a category or none
+    assert total(category=["__none__"]) == 1
+    assert total(source=["user"]) == 2 and total(source=["none"]) == 1 and total(source=["llm"]) == 0
+    assert total(bank_code=["CM"], category=["Alimentation"]) == 1  # filters combine with AND

@@ -51,14 +51,14 @@ export const useFiles = () => {
 };
 
 /** Operations of the current space (``space_id`` is added here, callers only pass their filters). */
-export const useTransactions = (filters: Omit<TransactionQuery, "space_id">) => {
+export const useTransactions = (filters: Omit<TransactionQuery, "space_id">, enabled = true) => {
   const { spaceId, ready } = useSpace();
   const query = { ...filters, space_id: spaceId };
   return useQuery({
     queryKey: keys.transactions(query),
     queryFn: () => unwrap(api.GET("/api/transactions", { params: { query } })),
     placeholderData: keepPreviousData,
-    enabled: ready,
+    enabled: ready && enabled,
   });
 };
 
